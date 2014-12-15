@@ -1,0 +1,17 @@
+﻿<Window x:Class="MNISTLoaderGUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MNISTTester GUI" Height="360" Width="525">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="32*"/>
+            <ColumnDefinition Width="15*"/>
+        </Grid.ColumnDefinitions>
+        <Button x:Name="btnStart" Content="Start" HorizontalAlignment="Left" Margin="19,10,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.693,0.273" Click="Button_Start"/>
+        <Button x:Name="btnStop" Content="Stop" HorizontalAlignment="Left" Margin="112,10,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.693,0.273" Click="Button_Stop" IsEnabled="False"/>
+        <TextBox x:Name="tbLog" HorizontalAlignment="Left" Height="256" Margin="10,47,0,0" TextWrapping="Wrap" Text="Starting..." VerticalAlignment="Top" Width="495" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto" Grid.ColumnSpan="2" IsUndoEnabled="False" IsReadOnly="True"/>
+        <ProgressBar x:Name="pbStatus" HorizontalAlignment="Left" Height="22" Margin="10,308,0,0" VerticalAlignment="Top" Width="495" Grid.ColumnSpan="2" Maximum="100"/>
+        <TextBlock HorizontalAlignment="Left" Height="23" Margin="205,10,0,0" Text="Max epoch number:" Width="120" VerticalAlignment="Top" TextWrapping="Wrap"/>
+        <TextBox HorizontalAlignment="Left" Height="22" Margin="325,10,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" Width="43" Grid.ColumnSpan="2" IsUndoEnabled="False" Name="tbMaxEpochNumber" PreviewTextInput="MaxEpochNumber_PreviewTextInput" MaxLength="4" MaxLines="1"/>
+    </Grid>
+</Window>
