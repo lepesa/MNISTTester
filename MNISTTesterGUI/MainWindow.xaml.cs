@@ -110,6 +110,7 @@ namespace MNISTLoaderGUI
             {
                 AddLogLine("Trying to stop test thread...");
                 cTokenSource.Cancel();
+                mnistTester.StopOperation();
                 btnStart.IsEnabled = true;
                 btnStop.IsEnabled = false;
             }

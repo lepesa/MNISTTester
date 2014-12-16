@@ -26,6 +26,8 @@ namespace TestClient
         private byte[] _desiredDatas = null;
         private byte[][] _imageDatas = null;
 
+        private bool stopOperation = false;
+
         private Random nrg = null;
 
         /// <summary>
@@ -148,6 +150,11 @@ namespace TestClient
                 outputValues[_desiredDatas[dataIndex[i]]] = 1.0f;
 
                 network.Backpropagation(outputValues, 0.3);
+
+                if( stopOperation)
+                {
+                    break;
+                }
             }
             return;            
         }
@@ -199,6 +206,16 @@ namespace TestClient
                 return (100 * materialIndex / materialSize);
             }
             return 0;
+        }
+
+        /// <summary>
+        /// Asettaa stoppilipun true/flase. Ei käytetä lukitusta, vaikka kutsutaankin 
+        /// toisesta threadista kuin missä itse laskenta pyörii, koska tämä on ainoa paikka,
+        /// missä arvoa muutetaan.
+        /// </summary>
+        public void SetStopFlag(bool value)
+        {
+            stopOperation = value;
         }
     }
 }

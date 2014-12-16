@@ -34,5 +34,11 @@ namespace MNISTTester
         /// </summary>
         /// <returns>Merkkijono</returns>
         string GetVersion();
+
+        /// <summary>
+        /// Asettaa keskeytyslipun on/off. True = keskeytetty
+        /// </summary>
+        void SetStopFlag(bool value);
+
     }
 }

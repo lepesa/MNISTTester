@@ -26,6 +26,7 @@ namespace MNISTLoaderGUI
             int epoch = 1;
             Stopwatch sw;
             mnistTester.TestNetwork.InitDatas(mnistTester.MnistData.ImageData, mnistTester.MnistData.ImageLabels);
+            mnistTester.StartOperation();
             timer.Start();
             while (!token.IsCancellationRequested && epoch <= maxEpochs)
             {
@@ -33,19 +34,27 @@ namespace MNISTLoaderGUI
                 sw = Stopwatch.StartNew();
 
                 mnistTester.TestNetwork.TrainEpoch();
-                totalTime += sw.Elapsed;
-                AddLogLine(sw.Elapsed + ": epoch trained.");
 
-                int rightNumber = mnistTester.GetResults();
-                int labelsCount = mnistTester.LabelsCount;
-                AddLogLine(sw.Elapsed + ": result: " + rightNumber + " / " + labelsCount + ".");
-
-                if( rightNumber > bestCount )
+                if (!token.IsCancellationRequested)
                 {
-                    bestCount = rightNumber;
-                }
+                    totalTime += sw.Elapsed;
+                    AddLogLine(sw.Elapsed + ": epoch trained.");
 
-                epoch++;
+                    int rightNumber = mnistTester.GetResults();
+                    int labelsCount = mnistTester.LabelsCount;
+                    AddLogLine(sw.Elapsed + ": result: " + rightNumber + " / " + labelsCount + ".");
+
+                    if (rightNumber > bestCount)
+                    {
+                        bestCount = rightNumber;
+                    }
+
+                    epoch++;
+                }
+                else
+                {
+                    AddLogLine("Cancelled.");
+                }
             }
             cdEvent.Signal();
             timer.Stop();

@@ -59,5 +59,27 @@ namespace MNISTTester
             return rightNumber;
         }
 
+        /// <summary>
+        /// Keskeytetään operaatio neuroverkon laskennassa.
+        /// </summary>
+        public void StopOperation()
+        {
+            if( testNetwork!= null)
+            {
+                testNetwork.SetStopFlag(true);
+            }
+        }
+
+        /// <summary>
+        /// Jos operaatio on aiemmin keskeytetty, niin sallitaan taas neuroverkon laskenta.
+        /// </summary>
+        public void StartOperation()
+        {
+            if (testNetwork != null)
+            {
+                testNetwork.SetStopFlag(false);
+            }
+        }
+
     }
 }
