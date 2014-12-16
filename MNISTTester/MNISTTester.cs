@@ -55,6 +55,11 @@ namespace MNISTTester
                 {
                     rightNumber++;
                 }
+                // Operaatio keskeytetty
+                if( labelInd == -1 )
+                {
+                    return 0;
+                }
             }
             return rightNumber;
         }

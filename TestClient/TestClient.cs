@@ -166,6 +166,11 @@ namespace TestClient
         /// <returns>Kuvan esittämän numeron indeksi</returns>
         public int GetNumber(byte[] numberData)
         {
+            if( stopOperation)
+            {
+                return -1;
+            }
+
             double temp;
             for (int j = 0; j < numberData.Length; j++)
             {
