@@ -18,7 +18,8 @@ namespace TestClient
         static Func<double, double> DerivateFunc = null;
         static Func<double, double> ActivateFunc = null;
 
-        private CostFunction costFunctionType = CostFunction.Quadratic;
+        public CostFunction costFunctionType = CostFunction.Quadratic;
+        public ActivateFunction activateFunctionType = ActivateFunction.Sigmoid;
 
         // Verkon alustus. Saadaan tietoon verkon koko, aktivointifunktio ja maksufunktio
         public Network(int[] layerSizes, ActivateFunction func, CostFunction cost)
@@ -27,7 +28,8 @@ namespace TestClient
             layers = new Layer[layerSizes.Length];
 
             costFunctionType = cost;
-            
+            activateFunctionType = func;
+
             for (int i = 0; i < layerSizes.Length; i++)
             {
                 if (i == 0)
@@ -126,13 +128,13 @@ namespace TestClient
         // Tanh -funktio feedforwardia varten
         private static double ActivateTanh(double value)
         {
-            return 2.0 / (1.0 + Math.Exp(-2.0 * value)) - 1.0;
+            return Math.Tanh(value);
         }
 
         // Tanh -funktio back propagationia varten
         private static double DerivateTanh(double value)
         {
-            return (1.0 - value * value);
+            return (1.0 - Math.Pow(ActivateTanh(value), 2.0));
         }
 
 
@@ -153,9 +155,9 @@ namespace TestClient
             {
                 for (i = outputLayer.neuronCount-1 ; i >= 0; i--)
                 {
-                    // MSE 
+                    // MSE. Huomaa että derivaatta pitää olla oikea, riippuen funktiosta
                     outputValue = outputLayer.outputValue[i];
-                    outputLayer.errorValue[i] = (desiredResult[i] - outputValue) * outputValue * (1 - outputValue);
+                    outputLayer.errorValue[i] = (desiredResult[i] - outputValue) * DerivateFunc(outputValue);
                 }
             }
             else

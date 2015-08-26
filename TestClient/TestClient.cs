@@ -27,7 +27,6 @@ namespace TestClient
         private byte[][] _imageDatas = null;
 
         private bool stopOperation = false;
-
         private Random nrg = null;
 
         /// <summary>
@@ -119,13 +118,11 @@ namespace TestClient
             
 
             // Normalisoidaan datat. Nyt ne ovat vielä välillä 0...255, halutaan välille 0...1
-            double temp;
             for(int i=0; i<materialSize; i++ )
             {
                 for(int j=0; j<imageSize; j++)
                 {
-                    temp = _imageDatas[dataIndex[i]][j];
-                    data[i][j] = temp / 255;
+                    data[i][j] = NormalizeImageData(_imageDatas[dataIndex[i]][j]);
                 }
             }
 
@@ -146,11 +143,19 @@ namespace TestClient
                 network.FeedForward();
 
                 // Output-arvot edustavat numeroita 0...9. Asetetaan haluttu indeksi ykköseksi.
-                Array.Clear(outputValues, 0, outputSize);
+                if (network.activateFunctionType == Network.ActivateFunction.Sigmoid)
+                {
+                    Array.Clear(outputValues, 0, outputSize);
+                } else
+                {
+                    for(int j=0; j<outputSize; j++)
+                    {
+                        outputValues[j] = -1;
+                    }
+                }
                 outputValues[_desiredDatas[dataIndex[i]]] = 1.0f;
 
                 network.Backpropagation(outputValues, 0.3);
-
                 if( stopOperation)
                 {
                     break;
@@ -158,7 +163,27 @@ namespace TestClient
             }
             return;            
         }
-        
+
+        /// <summary>
+        /// Normalisoi arvot välille 0...1 (sigmoid) tai -1...1 (tanh) 
+        /// </summary>
+        /// <param name="data">Pikselin arvo välillä 0-255</param>
+        /// <returns>Normalisoitu arvo</returns>
+        private double NormalizeImageData(byte data)
+        {
+            double temp = (double)data;
+            if (network.activateFunctionType == Network.ActivateFunction.Sigmoid)
+            {
+                // väli: 0...1
+                return (temp / 255);
+            }
+            else
+            {
+                //tanh: väli -1...1
+                return (temp / 127.5 - 1.0);
+            }
+        }
+
         /// <summary>
         /// Yrittää tunnistaa kuvan esittämän numeron.
         /// </summary>
@@ -171,19 +196,16 @@ namespace TestClient
                 return -1;
             }
 
-            double temp;
             for (int j = 0; j < numberData.Length; j++)
             {
-                temp = numberData[j];
-                network.layers[0].outputValue[j] = temp / 255;
-
+                network.layers[0].outputValue[j] = NormalizeImageData(numberData[j]);
             }
             // Pelkkä feedforward, ei haluta oppia mitään -> 
             // ei tarvitse muuttaa verkon painotuksia.
             network.FeedForward();
 
             int numberIndex = -1;
-            double maxValue = -10;
+            double maxValue = -9999;
 
             Layer outputLayer = network.layers[network.layers.Length - 1];
 
