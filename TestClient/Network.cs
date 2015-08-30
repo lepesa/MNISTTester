@@ -140,10 +140,10 @@ namespace TestClient
 
         // Opetetaan verkkoa. Käytännössä siis muutetaan verkon painotuksia odotettujen ja laskettujen arvojen perusteella.
         // Ennen tätä on yleensä feedforward suoritettu, jotta on jotain arvoja mitä opettaa.
-        public virtual void Backpropagation(double[] desiredResult, double learningRate)
+        public virtual void Backpropagation(double[] desiredResult, double learningRate, double momentum)
         {
 
-            // Lasketaan odotettujen arvojen ja todellisten arvojen välinen virhe: output layer
+           
             Layer outputLayer = layers[layers.Length - 1];
             double outputValue;
             int i;
@@ -151,6 +151,8 @@ namespace TestClient
             int currentLayerCount;
             int prevLayerCount;
 
+            // Lasketaan odotettujen arvojen ja todellisten arvojen välinen virhe: output layer
+            
             if (costFunctionType == CostFunction.Quadratic)
             {
                 for (i = outputLayer.neuronCount-1 ; i >= 0; i--)
@@ -202,7 +204,7 @@ namespace TestClient
 
 
             int biasIndex;
-
+            double weightDiff;
             // Nyt on virheet tiedossa. Päivitetään verkon painotukset lopusta alkuun.
             for (i = layers.Length - 1; i > 0; i--)
             {
@@ -219,14 +221,20 @@ namespace TestClient
                 // Bias  päivitys
                 for (j = currentLayerCount - 1; j >= 0; j--)
                 {
-                    // optimoitu
-                    currentLayer.weights[biasIndex][j] += currentLayer.weightDiffs[biasIndex][j] = currentLayer.errorValueTemp[j] = learningRate * currentLayer.errorValue[j];
+                    // Saadaam delta-arvo  derivoitu virhearvosta kerrottuna oppimisarvolla [0..1]. Laitetaan tämä talteen ja lisäksi lisätään se painoarvoon
                     
+                    currentLayer.weights[biasIndex][j] += weightDiff = currentLayer.errorValueTemp[j] = learningRate * currentLayer.errorValue[j];
+
+                    // Lisätään painoarvoon momenttiarvo kerrottuna edellisen kerran delta-arvolla
+                    currentLayer.weights[biasIndex][j] += momentum * currentLayer.prevWeightDiffs[biasIndex][j];
+
+                    // Asetetaan delta-arvo talteen seuraavaa laskukertaa varten
+                    currentLayer.prevWeightDiffs[biasIndex][j] = weightDiff;
+                         
                     /*  alkuperäinen
                         currentLayer.errorValueTemp[j] = learningRate * currentLayer.errorValue[j];
-
                         temppi = currentLayer.errorValueTemp[j];
-                        currentLayer.weightDiffs[biasIndex][j] = temppi;
+                        currentLayer.prevWeightDiffs[biasIndex][j] = temppi;
                         currentLayer.weights[biasIndex][j] += temppi;
                     */
                     // update weigths
@@ -240,18 +248,18 @@ namespace TestClient
 
                     for (k = 0; k < currentLayerCount; k++)
                     {
-                        // lopullinen optimoitu
-                        currentLayer.weights[j][k] += currentLayer.weightDiffs[j][k] = currentLayer.errorValueTemp[k] * previousLayer.outputValue[j] ;
+                        // Lasketaan ei-bias arvot. errorValueTemp[x] on learninRate * errorValue[x]. Tämä on saatu laskettua jo biassien laskemisessa.
+                         
+                        currentLayer.weights[j][k] += weightDiff = currentLayer.errorValueTemp[k] * previousLayer.outputValue[j] ;
+                        currentLayer.weights[j][k] += momentum * currentLayer.prevWeightDiffs[j][k];
+                        currentLayer.prevWeightDiffs[j][k] = weightDiff;
 
-                        /*  optimoitu
+                        /*  alkuperäinen
                             temppi = currentLayer.errorValueTemp[k] * previousLayer.outputValue[j];
-                            currentLayer.weightDiffs[j][k] = temppi;
+                            //temppi = learningRate * currentLayer.errorValue[k] * previousLayer.outputValue[j];
+                            currentLayer.prevWeightDiffs[j][k] = temppi;
                             currentLayer.weights[j][k] += temppi; 
                         */
-                        /*  alkuperäinen
-                            currentLayer.weightDiffs[j][k] = currentLayer.errorValueTemp[k] * previousLayer.outputValue[j];
-                            currentLayer.weights[j][k] += currentLayer.weightDiffs[j][k];// 
-                         */
                     }
                 }
             }

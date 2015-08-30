@@ -131,7 +131,8 @@ namespace TestClient
             int outputSize = outputLayer.neuronCount;
             
             // Opetetaan kuva kerrallaan. Ekana feedforward, sen jälkeen backpropagation.
-            // Käytetään kiinteitä arvoja: oppimiskerroin 0.3. momenttia tai weight decayta ei käytössä.
+            // Käytetään kiinteitä arvoja: oppimiskerroin 0.3. momentti on käytössä ja asetettu arvoon 0.1.
+            // weight decayta ei ole
             
             for (int i = 0; i < materialSize; i++,materialIndex++  )
             {
@@ -155,7 +156,7 @@ namespace TestClient
                 }
                 outputValues[_desiredDatas[dataIndex[i]]] = 1.0f;
 
-                network.Backpropagation(outputValues, 0.3);
+                network.Backpropagation(outputValues, 0.3, 0.1);
                 if( stopOperation)
                 {
                     break;

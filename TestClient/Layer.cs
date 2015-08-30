@@ -16,7 +16,7 @@ namespace TestClient
         public double[] errorValueTemp;
 
         public double[][] weights;
-        public double[][] weightDiffs;
+        public double[][] prevWeightDiffs;
 
         // Inputlayerilla ei ole tarvetta matriisille.
         public Layer(int nc)
@@ -37,12 +37,12 @@ namespace TestClient
             // Painot vaativat matriisin. Tehdään jagged array.
 
             weights = new double[prevLayerNeuronCount + 1][];
-            weightDiffs = new double[prevLayerNeuronCount + 1][];
+            prevWeightDiffs = new double[prevLayerNeuronCount + 1][];
 
             for(int i=0; i<prevLayerNeuronCount +1; i++)
             {
                 weights[i] = new double[nc];
-                weightDiffs[i] = new double[nc];
+                prevWeightDiffs[i] = new double[nc];
             }
 
         }
@@ -70,7 +70,7 @@ namespace TestClient
 
                         this.weights[i][j] = NetworkTools.InitValue(nrg);
                         
-                        this.weightDiffs[i][j] = 0;
+                        this.prevWeightDiffs[i][j] = 0;
 
                     }
                 }
@@ -94,12 +94,12 @@ namespace TestClient
                     {
 
                         this.weights[i][j] = NetworkTools.GaussianRandom(nrg, 0, 1) / Math.Sqrt(prevLayerCount);
-                        this.weightDiffs[i][j] = 0;
+                        this.prevWeightDiffs[i][j] = 0;
 
                     }
                     // bias
                     this.weights[i][j] = NetworkTools.GaussianRandom(nrg, 0, 1);
-                    this.weightDiffs[i][j] = 0;
+                    this.prevWeightDiffs[i][j] = 0;
                 }
             }
         }
