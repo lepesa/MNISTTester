@@ -140,10 +140,8 @@ namespace TestClient
 
         // Opetetaan verkkoa. Käytännössä siis muutetaan verkon painotuksia odotettujen ja laskettujen arvojen perusteella.
         // Ennen tätä on yleensä feedforward suoritettu, jotta on jotain arvoja mitä opettaa.
-        public virtual void Backpropagation(double[] desiredResult, double learningRate, double momentum)
-        {
-
-           
+        public virtual void Backpropagation(double[] desiredResult, double learningRate, double momentum, double weightDecay)
+        { 
             Layer outputLayer = layers[layers.Length - 1];
             double outputValue;
             int i;
@@ -223,7 +221,13 @@ namespace TestClient
                 {
                     // Saadaam delta-arvo  derivoitu virhearvosta kerrottuna oppimisarvolla [0..1]. Laitetaan tämä talteen ja lisäksi lisätään se painoarvoon
                     
-                    currentLayer.weights[biasIndex][j] += weightDiff = currentLayer.errorValueTemp[j] = learningRate * currentLayer.errorValue[j];
+                    weightDiff = currentLayer.errorValueTemp[j] = learningRate * currentLayer.errorValue[j];
+                                    
+                    // vähennetään weight decay painosta: paino on vielä w(t)
+                    currentLayer.weights[biasIndex][j] -= weightDecay * learningRate * currentLayer.weights[biasIndex][j];
+
+                    // Lisätään delta, nyt paino on w(t+1)
+                    currentLayer.weights[biasIndex][j] += weightDiff;
 
                     // Lisätään painoarvoon momenttiarvo kerrottuna edellisen kerran delta-arvolla
                     currentLayer.weights[biasIndex][j] += momentum * currentLayer.prevWeightDiffs[biasIndex][j];
@@ -250,7 +254,15 @@ namespace TestClient
                     {
                         // Lasketaan ei-bias arvot. errorValueTemp[x] on learninRate * errorValue[x]. Tämä on saatu laskettua jo biassien laskemisessa.
                          
-                        currentLayer.weights[j][k] += weightDiff = currentLayer.errorValueTemp[k] * previousLayer.outputValue[j] ;
+                        weightDiff = currentLayer.errorValueTemp[k] * previousLayer.outputValue[j] ;
+
+                        // vähennetään weight decay painosta: paino on vielä w(t)
+                        currentLayer.weights[j][k] -= weightDecay * learningRate * currentLayer.weights[j][k];
+
+                        // Lisätään delta, nyt paino on w(t+1)
+                        currentLayer.weights[j][k] += weightDiff;
+
+                        // Lisätään momentti
                         currentLayer.weights[j][k] += momentum * currentLayer.prevWeightDiffs[j][k];
                         currentLayer.prevWeightDiffs[j][k] = weightDiff;
 

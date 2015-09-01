@@ -21,7 +21,7 @@ namespace TestClient
         private int[] dataIndex;
         private double[][] data;
 
-        private double[] outputValues = null;
+        private double[] idealValues = null;
 
         private byte[] _desiredDatas = null;
         private byte[][] _imageDatas = null;
@@ -52,7 +52,7 @@ namespace TestClient
         /// <summary>
         /// Alustetaan opetusmateriaali verkkoa varten.
         /// </summary>
-        /// <param name="imageDatas">Kuvatiedostot, n kpl, 28*28 kuvia</param>
+        /// <param name="imageDatas">Kuvatiedostot, kuvia n kpl, 28*28 pikselin kuva</param>
         /// <param name="desiredDatas">Kuvatiedostojen selitteet, kertoo mikä numero kuvassa</param>
         public void InitDatas(byte[][] imageDatas, byte[] desiredDatas)
         {
@@ -79,7 +79,7 @@ namespace TestClient
 
             Layer outputLayer = network.layers[network.layers.Length - 1];
             int outputSize = outputLayer.neuronCount;
-            outputValues = new double[outputSize];
+            idealValues = new double[outputSize];
         }
 
         /// <summary>
@@ -146,17 +146,18 @@ namespace TestClient
                 // Output-arvot edustavat numeroita 0...9. Asetetaan haluttu indeksi ykköseksi.
                 if (network.activateFunctionType == Network.ActivateFunction.Sigmoid)
                 {
-                    Array.Clear(outputValues, 0, outputSize);
+                    Array.Clear(idealValues, 0, outputSize);
                 } else
                 {
                     for(int j=0; j<outputSize; j++)
                     {
-                        outputValues[j] = -1;
+                        idealValues[j] = -1;
                     }
                 }
-                outputValues[_desiredDatas[dataIndex[i]]] = 1.0f;
+                idealValues[_desiredDatas[dataIndex[i]]] = 1.0f;
 
-                network.Backpropagation(outputValues, 0.3, 0.1);
+                // learning rate, momentum, weight decay
+                network.Backpropagation(idealValues, 0.01, 0.1, 0.0001);
                 if( stopOperation)
                 {
                     break;
