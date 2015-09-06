@@ -9,26 +9,24 @@ namespace TestClient
     public class Network
     {
         
-        public enum ActivateFunction { Sigmoid, Tanh };
+        public enum ActivateFunction { InputLayer, Sigmoid, Tanh };
         public enum CostFunction { Quadratic, CrossEntropy };
 
         public readonly Layer[] layers;
 
         // Sigmoidin / Tanh:n vaatimat pointterit
-        static Func<double, double> DerivateFunc = null;
-        static Func<double, double> ActivateFunc = null;
+     
 
         public CostFunction costFunctionType = CostFunction.Quadratic;
-        public ActivateFunction activateFunctionType = ActivateFunction.Sigmoid;
-
+     
         // Verkon alustus. Saadaan tietoon verkon koko, aktivointifunktio ja maksufunktio
-        public Network(int[] layerSizes, ActivateFunction func, CostFunction cost)
+        public Network(int[] layerSizes, ActivateFunction[] funcs, CostFunction cost)
         {
 
             layers = new Layer[layerSizes.Length];
 
             costFunctionType = cost;
-            activateFunctionType = func;
+            
 
             for (int i = 0; i < layerSizes.Length; i++)
             {
@@ -42,19 +40,23 @@ namespace TestClient
                     // hidden / output
                     layers[i] = new Layer(layerSizes[i], layerSizes[i - 1]);
                 }
-      
+
+                layers[i].activateFunctionType = funcs[i];
+
+                // Asetetaan oikeat funktiot feedforwardia/back propagationia varten
+                if (funcs[i] == ActivateFunction.Sigmoid)
+                {
+                    layers[i].ActivateFunc = ActivateSigmoid;
+                    layers[i].DerivateFunc = DerivateSigmoid;
+                }
+                if (funcs[i] == ActivateFunction.Tanh)
+                {
+                    layers[i].ActivateFunc = ActivateTanh;
+                    layers[i].DerivateFunc = DerivateTanh;
+                }
+
             }
-            // Asetetaan oikeat funktiot feedforwardia/back propagationia varten
-            if (func == ActivateFunction.Sigmoid)
-            {
-                ActivateFunc = ActivateSigmoid;
-                DerivateFunc = DerivateSigmoid;
-            }
-            if (func == ActivateFunction.Tanh)
-            {
-                ActivateFunc = ActivateTanh;
-                DerivateFunc = DerivateTanh;
-            }
+           
 
         }
         // Aseta uudet satunnaiset painotukset kaikille layereille
@@ -108,7 +110,7 @@ namespace TestClient
                     // tanh
                     //layers[i].outputValue[j] = (Math.Exp(output * 2.0) - 1.0) / (Math.Exp(output * 2.0) + 1.0);
 
-                    currentLayer.outputValue[j] = ActivateFunc(output);
+                    currentLayer.outputValue[j] = currentLayer.ActivateFunc(output);
                 }  
             }
         }
@@ -157,7 +159,7 @@ namespace TestClient
                 {
                     // MSE. Huomaa että derivaatta pitää olla oikea, riippuen funktiosta
                     outputValue = outputLayer.outputValue[i];
-                    outputLayer.errorValue[i] = (desiredResult[i] - outputValue) * DerivateFunc(outputValue);
+                    outputLayer.errorValue[i] = (desiredResult[i] - outputValue) * outputLayer.DerivateFunc(outputValue);
                 }
             }
             else
@@ -192,14 +194,14 @@ namespace TestClient
 
                     // sigmoid derivate, sigmoid(x) * (1-sigmoid(x))
                     // tanh derviate: (1-tanh(x)^2)
-                    hiddenLayer.errorValue[j] = DerivateFunc(hiddenLayer.outputValue[j]) * outputValue;
+                    
+                    hiddenLayer.errorValue[j] = hiddenLayer.DerivateFunc(hiddenLayer.outputValue[j]) * outputValue;
 
                 }
             }
 
             Layer currentLayer;      // layers[i]
             Layer previousLayer;     // layers[i-1]
-
 
             int biasIndex;
             double weightDiff;

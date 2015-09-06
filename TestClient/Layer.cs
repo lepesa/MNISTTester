@@ -18,6 +18,10 @@ namespace TestClient
         public double[][] weights;
         public double[][] prevWeightDiffs;
 
+        public  Func<double, double> DerivateFunc = null;
+        public  Func<double, double> ActivateFunc = null;
+        public Network.ActivateFunction activateFunctionType;
+
         // Inputlayerilla ei ole tarvetta matriisille.
         public Layer(int nc)
         {

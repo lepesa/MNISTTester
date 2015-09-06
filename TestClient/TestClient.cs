@@ -35,7 +35,7 @@ namespace TestClient
         public TestClient()
         {
             // 3 layer network, 784 * 30 * 10
-            network = new Network(new int[] { 28 * 28, 30, 10 }, Network.ActivateFunction.Sigmoid, Network.CostFunction.Quadratic);
+            network = new Network(new int[] { 28 * 28, 30, 10 }, new Network.ActivateFunction[]{ Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Sigmoid }, Network.CostFunction.Quadratic);
             network.ResetGaussian();
             nrg = new Random();
         }
@@ -122,7 +122,7 @@ namespace TestClient
             {
                 for(int j=0; j<imageSize; j++)
                 {
-                    data[i][j] = NormalizeImageData(_imageDatas[dataIndex[i]][j]);
+                    data[i][j] = NormalizeImageData(_imageDatas[dataIndex[i]][j], network.layers[1].activateFunctionType);
                 }
             }
 
@@ -144,7 +144,7 @@ namespace TestClient
                 network.FeedForward();
 
                 // Output-arvot edustavat numeroita 0...9. Asetetaan haluttu indeksi ykköseksi.
-                if (network.activateFunctionType == Network.ActivateFunction.Sigmoid)
+                if (network.layers[network.layers.Length-1].activateFunctionType == Network.ActivateFunction.Sigmoid)
                 {
                     Array.Clear(idealValues, 0, outputSize);
                 } else
@@ -171,10 +171,10 @@ namespace TestClient
         /// </summary>
         /// <param name="data">Pikselin arvo välillä 0-255</param>
         /// <returns>Normalisoitu arvo</returns>
-        private double NormalizeImageData(byte data)
+        private double NormalizeImageData(byte data, Network.ActivateFunction func)
         {
             double temp = (double)data;
-            if (network.activateFunctionType == Network.ActivateFunction.Sigmoid)
+            if (func == Network.ActivateFunction.Sigmoid)
             {
                 // väli: 0...1
                 return (temp / 255);
@@ -200,7 +200,7 @@ namespace TestClient
 
             for (int j = 0; j < numberData.Length; j++)
             {
-                network.layers[0].outputValue[j] = NormalizeImageData(numberData[j]);
+                network.layers[0].outputValue[j] = NormalizeImageData(numberData[j], network.layers[1].activateFunctionType);
             }
             // Pelkkä feedforward, ei haluta oppia mitään -> 
             // ei tarvitse muuttaa verkon painotuksia.
