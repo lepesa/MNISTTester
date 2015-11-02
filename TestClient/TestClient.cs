@@ -83,10 +83,45 @@ namespace TestClient
         }
 
         /// <summary>
-        /// Käy läpi kaikki kuvat ja opettaa/laskee niiden perusteella verkkoa.
+        /// Päivitetään kuvadata uusiksi sekoittamalla sen järjestys ja normalisoimalla se.
         /// </summary>
-        /// <param name="imageDatas">Kuvat [1...n][28*28 pixeliä]</param>
-        /// <param name="desiredDatas">Tietyn kuvan numero</param>
+        private void InitializeImageData()
+        {
+            int newI;
+            int tmpI;
+            
+            // Yritetään satunnaistaa opetusjärjestystä -> parempi oppiminen kun kuvat
+            // eivät ole joka kerralla samassa järjestyksessä. Tehokkaampi sekoitus olisi kiva,
+            // mutta tämän ajankäyttö on O(n) ja jokaisella kerralla aineisto on melko varmasti
+            // eri kohdassa kuin viimeksi.
+
+            for (int i = 0; i < _imageDatas.Length; i++)
+            {
+                newI = nrg.Next(0, _imageDatas.Length - 1);
+                if (i != newI)
+                {
+                    tmpI = dataIndex[newI];
+                    dataIndex[newI] = dataIndex[i];
+                    dataIndex[i] = tmpI;
+                }
+            }
+
+
+            // Normalisoidaan datat. Nyt ne ovat vielä välillä 0...255, halutaan välille 0...1
+            for (int i = 0; i < _imageDatas.Length; i++)
+            {
+                for (int j = 0; j < _imageDatas[0].Length; j++)
+                {
+                    data[i][j] = NormalizeImageData(_imageDatas[dataIndex[i]][j], network.layers[1].activateFunctionType);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Käy läpi kaikki kuvat ja opettaa/laskee niiden perusteella verkkoa.
+        /// Käytetään stochastic back-propagation, eli lasketaan outputit, saadaan niistä virhe ja päivitetään verkkoa 
+        /// jokaisen yhden laskun (kuvan) jälkeen.
+        /// </summary>
         public void TrainEpoch()
         {
             // progressbar arvot
@@ -96,36 +131,8 @@ namespace TestClient
 
             int imageSize = _imageDatas[0].Length;
 
-            int newI;
-            int tmpI;
 
-
-            // Yritetään satunnaistaa opetusjärjestystä -> parempi oppiminen kun kuvat
-            // eivät ole joka kerralla samassa järjestyksessä. Tehokkaampi sekoitus olisi kiva,
-            // mutta tämän ajankäyttö on O(n) ja jokaisella kerralla aineisto on melko varmasti
-            // eri kohdassa kuin viimeksi.
-
-            for (int i = 0; i < materialSize; i++)
-            {
-                newI = nrg.Next(0, materialSize-1);
-                if (i != newI)
-                {
-                    tmpI = dataIndex[newI];
-                    dataIndex[newI] = dataIndex[i];
-                    dataIndex[i] = tmpI;
-                }
-            }
-            
-
-            // Normalisoidaan datat. Nyt ne ovat vielä välillä 0...255, halutaan välille 0...1
-            for(int i=0; i<materialSize; i++ )
-            {
-                for(int j=0; j<imageSize; j++)
-                {
-                    data[i][j] = NormalizeImageData(_imageDatas[dataIndex[i]][j], network.layers[1].activateFunctionType);
-                }
-            }
-
+            InitializeImageData();
 
             Layer outputLayer = network.layers[network.layers.Length - 1];
             int outputSize = outputLayer.neuronCount;
@@ -157,7 +164,7 @@ namespace TestClient
                 idealValues[_desiredDatas[dataIndex[i]]] = 1.0f;
 
                 // learning rate, momentum, weight decay
-                network.Backpropagation(idealValues, 0.01, 0.1, 0.0001);
+                network.Backpropagation(idealValues, 0.3, 0.7, 0.000);
                 if( stopOperation)
                 {
                     break;
@@ -165,6 +172,77 @@ namespace TestClient
             }
             return;            
         }
+
+        /// <summary>
+        /// Käy läpi kaikki kuvat ja opettaa/laskee niiden perusteella verkkoa. Tämä tehdään käyttämällä minibatcheja.
+        /// ts. verkolle tehdään opetus vasta kun on laskettu virhe batchSize:n ilmaisemalle määrälle elementtejä ja 
+        /// tästä otetaan keskiarvo.
+        /// </summary>
+        public void TrainEpochMiniBatch(int batchSize)
+        {
+            // progressbar arvot
+            materialIndex = 0;
+            materialSize = _imageDatas.Length;
+
+            int imageSize = _imageDatas[0].Length;
+
+            InitializeImageData();
+
+            Layer outputLayer = network.layers[network.layers.Length - 1];
+            int outputSize = outputLayer.neuronCount;
+
+
+            double oldIdealValue;
+            // Output-arvot edustavat numeroita 0...9. Asetetaan haluttu indeksi ykköseksi.
+            if (network.layers[network.layers.Length - 1].activateFunctionType == Network.ActivateFunction.Sigmoid)
+            {
+                Array.Clear(idealValues, 0, outputSize);
+            }
+            else
+            {
+                for (int j = 0; j < outputSize; j++)
+                {
+                    idealValues[j] = -1;
+                }
+            }
+
+            for (int matIndex = 0; matIndex < materialSize; matIndex+=batchSize, materialIndex+=batchSize)
+            {
+
+                network.ClearMiniBatchValues();
+
+                // Laske yhteinen virhe
+                for (int batchNro = 0; batchNro < batchSize; batchNro++)
+                {
+                    for (int j = 0; j < imageSize; j++)
+                    {
+                        network.layers[0].outputValue[j] = data[matIndex+batchNro][j];
+                    }
+
+                    network.FeedForward();
+
+                    // Koska vain yksi arvo kerrallaan on yksi, niin otetaan vanha arvo talteen ja asetetaan myöhemmin takaisin
+                    oldIdealValue = idealValues[_desiredDatas[dataIndex[matIndex + batchNro]]];
+                    idealValues[_desiredDatas[dataIndex[matIndex+ batchNro]]] = 1.0f;
+                    
+                    network.CalculateMiniBatchError(idealValues);
+
+                    idealValues[_desiredDatas[dataIndex[matIndex + batchNro]]] = oldIdealValue;
+
+                }
+
+                // learning rate, momentum
+                network.UpdateMinibatchValues(0.1 / batchSize, 0.1 / batchSize);
+                
+              
+                if (stopOperation)
+                {
+                    break;
+                }
+            }
+            return;
+        }
+    
 
         /// <summary>
         /// Normalisoi arvot välille 0...1 (sigmoid) tai -1...1 (tanh) 

@@ -12,9 +12,15 @@ namespace MNISTTester
         void InitDatas(byte[][] imageDatas, byte[] desiredDatas);
 
         /// <summary>
-        /// Aja yksi opetuskierros läpi
+        /// Aja yksi opetuskierros läpi käyttäen stochastic back-propagation
         /// </summary>
         void TrainEpoch();
+
+        /// <summary>
+        /// Aja yksi opetuskierros läpi käyttäen minibatchia
+        /// </summary>
+        /// <param name="batchSize"></param>
+        void TrainEpochMiniBatch(int batchSize);
 
         /// <summary>
         /// Kysy neuroverkolta mielipidettä mitä numeroa kuva esittää

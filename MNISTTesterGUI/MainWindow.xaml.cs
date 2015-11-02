@@ -20,6 +20,7 @@ namespace MNISTLoaderGUI
         private CountdownEvent cdEvent = new CountdownEvent(0);
         private DispatcherTimer timer;
         private int MaxEpochs;
+        private int MiniBatchSize;
 
         MNISTTester.MNISTTester mnistTester;
 
@@ -80,6 +81,12 @@ namespace MNISTLoaderGUI
                 if (MaxEpochs == 0)
                 {
                     MaxEpochs = Int32.MaxValue;
+                }
+
+                MiniBatchSize = Int32.Parse(tbMiniBatchSize.Text);
+                if( MiniBatchSize < 0)
+                {
+                    MiniBatchSize = 1;
                 }
 
                 AddLogLine("Starting test thread: " + MaxEpochs + " loops.");

@@ -18,6 +18,8 @@ namespace TestClient
         public double[][] weights;
         public double[][] prevWeightDiffs;
 
+        public double[][] gradients;
+
         public  Func<double, double> DerivateFunc = null;
         public  Func<double, double> ActivateFunc = null;
         public Network.ActivateFunction activateFunctionType;
@@ -29,8 +31,11 @@ namespace TestClient
             InitOutputErrorValues(nc);
         }
 
-        // Alustetaan hidden/output layer, parametrina tason neutronien määrä ja edellisen layerin neutronien määrä.
-
+        /// <summary>
+        /// Alustetaan hidden/output layer, parametrina tason neutronien määrä ja edellisen layerin neutronien määrä.
+        /// </summary>
+        /// <param name="nc"></param>
+        /// <param name="prevLayerNeuronCount"></param>
         public Layer(int nc, int prevLayerNeuronCount)
         {
             neuronCount = nc;
@@ -42,13 +47,22 @@ namespace TestClient
 
             weights = new double[prevLayerNeuronCount + 1][];
             prevWeightDiffs = new double[prevLayerNeuronCount + 1][];
+            gradients = new double[prevLayerNeuronCount + 1][];
 
-            for(int i=0; i<prevLayerNeuronCount +1; i++)
+            for (int i = 0; i < prevLayerNeuronCount + 1; i++)
             {
                 weights[i] = new double[nc];
+                
+                
+            }
+            for (int i = 0; i < prevLayerNeuronCount + 1; i++)
+            {
                 prevWeightDiffs[i] = new double[nc];
             }
-
+            for (int i = 0; i < prevLayerNeuronCount + 1; i++)
+            {
+                gradients[i] = new double[nc];
+            }
         }
         
         private void InitOutputErrorValues(int nc)
@@ -60,7 +74,26 @@ namespace TestClient
             outputValue[nc] = 1;
         }
 
-        // Asetetaan painoille arvot satunnaisluvuilla välilä -1...1
+        /// <summary>
+        /// Tyhjentää gradientin. Tähän tallennetaan minibatchin summat
+        /// </summary>
+        public void ResetGradients()
+        {
+            if (gradients != null)
+            {
+                for (int i = 0; i < gradients.Length; i++)
+                {
+                    for (int j = 0; j < gradients[0].Length; j++)
+                    {
+                        this.gradients[i][j] = 0;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Asetetaan painoille arvot satunnaisluvuilla välilä -1...1
+        /// </summary>
         public void Reset()
         {
             if (weights != null)
@@ -71,17 +104,15 @@ namespace TestClient
                 {
                     for (int j = 0; j < weights[0].Length; j++)
                     {
-
                         this.weights[i][j] = NetworkTools.InitValue(nrg);
-                        
                         this.prevWeightDiffs[i][j] = 0;
-
                     }
                 }
             }
         }
-
-        // Asetetaan painoille gaussin käyrän mukaiset satunnaisarvot.
+        /// <summary>
+        /// Asetetaan painoille gaussin käyrän mukaiset satunnaisarvot.
+        /// </summary>
         public void ResetGaussian()
         {
             if (weights != null)
@@ -96,10 +127,8 @@ namespace TestClient
                 {
                     for (j = 0; j < currentLayerCount - 1; j++)
                     {
-
                         this.weights[i][j] = NetworkTools.GaussianRandom(nrg, 0, 1) / Math.Sqrt(prevLayerCount);
                         this.prevWeightDiffs[i][j] = 0;
-
                     }
                     // bias
                     this.weights[i][j] = NetworkTools.GaussianRandom(nrg, 0, 1);

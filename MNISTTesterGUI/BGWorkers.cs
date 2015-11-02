@@ -20,6 +20,7 @@ namespace MNISTLoaderGUI
             CancellationToken token = (CancellationToken)obj;
 
             int maxEpochs = MaxEpochs;
+            int miniBatchSize = MiniBatchSize;
             int bestCount = 0;
             TimeSpan totalTime = new TimeSpan();
 
@@ -28,12 +29,28 @@ namespace MNISTLoaderGUI
             mnistTester.TestNetwork.InitDatas(mnistTester.MnistData.ImageData, mnistTester.MnistData.ImageLabels);
             mnistTester.StartOperation();
             timer.Start();
+
+            if( miniBatchSize == 1 )
+            {
+                AddLogLine("Using stochastics gradient descent" );
+            } else
+            {
+                AddLogLine("Using mini-batch gradient descent. Batch size: " + miniBatchSize);
+            }
+
             while (!token.IsCancellationRequested && epoch <= maxEpochs)
             {
                 AddLogLine("Starting training epoch: " + epoch);
                 sw = Stopwatch.StartNew();
 
-                mnistTester.TestNetwork.TrainEpoch();
+                if (miniBatchSize == 1)
+                {
+                    mnistTester.TestNetwork.TrainEpoch();
+                }
+                else
+                {
+                    mnistTester.TestNetwork.TrainEpochMiniBatch(miniBatchSize);
+                }
 
                 if (!token.IsCancellationRequested)
                 {
