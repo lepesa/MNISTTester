@@ -12,6 +12,7 @@
 */
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace TestClient
 {
@@ -94,8 +95,12 @@ namespace TestClient
             Layer prevLayer;
 
             double output;
+            double output2;
+            double output3;
+            double output4;
             int prevLength;
             int neur;
+            int neur2;
             int j;
 
             for (int i = 1; i < layers.Length; i++)
@@ -108,12 +113,37 @@ namespace TestClient
                 {
                     // TODO: Dot product
                     // Calculate Oneur * Wneur*J + ... + ( 1 * Bias)
-                    output = 0;
-                    for (neur = prevLength - 1; neur >= 0; neur--)
-                    {
-                        output += prevLayer.outputValue[neur] * currentLayer.weights[neur][j];
-                    }
+                    output = output2 = output3 = output4 = 0;
+                   
+                    neur2 = prevLength % 4;
+                    neur = prevLength - 1;
 
+                    switch (neur2)
+                    {
+                        case 1:
+                            output3 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
+                            break;
+                        case 2:
+                            output2 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
+                            output3 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
+                            break;
+                        case 3:
+                            output2 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
+                            output2 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
+                            output3 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
+                            break;
+                        default:
+                            break;
+                    }
+                    
+                    while (neur>=3)
+                    {
+                        output += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
+                        output2 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
+                        output2 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
+                        output3 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
+                    }
+                    output += output2 + output3 + output4;
                     // sigmoid: 1.0 / (1 + Math.exp(-1.0 * d));
                     //                   layers[i].outputValue[j] = 1.0 / ( 1.0 + Math.Exp( -1.0 * output ));
                     // tanh
@@ -232,7 +262,6 @@ namespace TestClient
             Layer previousLayer;     // layers[i-1]
 
             int biasIndex;
-            double weightDiff;
             double prevOutputValue;
             // Nyt on virheet tiedossa. Päivitetään verkon gradientit lopusta alkuun.
             for (i = layers.Length - 1; i > 0; i--)
@@ -272,7 +301,7 @@ namespace TestClient
 
         }
 
-        public void UpdateMinibatchValues(double learningRate, double momentum)
+        public void UpdateMinibatchValues(double learningRate, double momentum, double lambda, int batchSize, int trainingSize)
         {
             Layer currentLayer;      // layers[i]
             Layer previousLayer;     // layers[i-1]
@@ -281,6 +310,13 @@ namespace TestClient
             int k;
             int currentLayerCount;
             int prevLayerCount;
+
+
+            
+            double l2reg = 1 - (learningRate * (lambda/ trainingSize));
+
+            learningRate = learningRate / batchSize;
+            momentum = momentum / batchSize;
 
             int biasIndex;
             double weightDiff;
@@ -306,8 +342,6 @@ namespace TestClient
                     // Lisätään delta, nyt paino on w(t+1)
                     currentLayer.weights[biasIndex][j] += weightDiff;
 
-                    // Lisätään delta, nyt paino on w(t+1)
-                    currentLayer.weights[biasIndex][j] += weightDiff;
 
                     // Lisätään painoarvoon momenttiarvo kerrottuna edellisen kerran delta-arvolla
                     currentLayer.weights[biasIndex][j] += momentum * currentLayer.prevWeightDiffs[biasIndex][j];
@@ -330,12 +364,9 @@ namespace TestClient
                         // vähennetään weight decay painosta: paino on vielä w(t)
                         //currentLayer.weights[j][k] -= weightDecay * learningRate * currentLayer.weights[j][k];
 
-                        // Lisätään delta, nyt paino on w(t+1)
-                        currentLayer.weights[j][k] += weightDiff;
+                        // Lisätään delta, nyt paino on w(t+1) ja lisäksi momentti
+                        currentLayer.weights[j][k] = l2reg * currentLayer.weights[j][k] + weightDiff + momentum * currentLayer.prevWeightDiffs[j][k]; ;
                                        
-                        // Lisätään momentti
-                        currentLayer.weights[j][k] += momentum * currentLayer.prevWeightDiffs[j][k];
-
                         // Vanha delta talteen seuraavaa kierrosta varten
                         currentLayer.prevWeightDiffs[j][k] = weightDiff;
 

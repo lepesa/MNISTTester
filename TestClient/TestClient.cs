@@ -45,8 +45,9 @@ namespace TestClient
         /// </summary>
         public TestClient()
         {
+
             // 3 layer network, 784 * 30 * 10
-            network = new Network(new int[] { 28 * 28, 30, 10 }, new Network.ActivateFunction[]{ Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Sigmoid }, Network.CostFunction.Quadratic);
+            network = new Network(new int[] { 28 * 28, 30, 10 }, new Network.ActivateFunction[]{ Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Sigmoid }, Network.CostFunction.CrossEntropy);
             network.ResetGaussian();
             nrg = new Random();
         }
@@ -243,7 +244,7 @@ namespace TestClient
                 }
 
                 // learning rate, momentum
-                network.UpdateMinibatchValues(0.1 / batchSize, 0.1 / batchSize);
+                network.UpdateMinibatchValues(0.1, 0.0, 6, batchSize, 60000);
                 
               
                 if (stopOperation)
