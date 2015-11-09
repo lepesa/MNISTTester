@@ -131,7 +131,7 @@ namespace TestClient
 
         /// <summary>
         /// Käy läpi kaikki kuvat ja opettaa/laskee niiden perusteella verkkoa.
-        /// Käytetään stochastic back-propagation, eli lasketaan outputit, saadaan niistä virhe ja päivitetään verkkoa 
+        /// Käytetään online stochastic back-propagation, eli lasketaan outputit, saadaan niistä virhe ja päivitetään verkkoa 
         /// jokaisen yhden laskun (kuvan) jälkeen.
         /// </summary>
         public void TrainEpoch()
@@ -148,11 +148,25 @@ namespace TestClient
 
             Layer outputLayer = network.layers[network.layers.Length - 1];
             int outputSize = outputLayer.neuronCount;
-            
+
+            double oldIdealValue;
+            // Output-arvot edustavat numeroita 0...9. Asetetaan haluttu indeksi ykköseksi.
+            if (network.layers[network.layers.Length - 1].activateFunctionType == Network.ActivateFunction.Sigmoid)
+            {
+                Array.Clear(idealValues, 0, outputSize);
+            }
+            else
+            {
+                for (int j = 0; j < outputSize; j++)
+                {
+                    idealValues[j] = -1;
+                }
+            }
+
             // Opetetaan kuva kerrallaan. Ekana feedforward, sen jälkeen backpropagation.
             // Käytetään kiinteitä arvoja: oppimiskerroin 0.3. momentti on käytössä ja asetettu arvoon 0.1.
             // weight decayta ei ole
-            
+
             for (int i = 0; i < materialSize; i++,materialIndex++  )
             {
                 for (int j = 0; j < imageSize; j++)
@@ -162,22 +176,15 @@ namespace TestClient
 
                 network.FeedForward();
 
-                // Output-arvot edustavat numeroita 0...9. Asetetaan haluttu indeksi ykköseksi.
-                if (network.layers[network.layers.Length-1].activateFunctionType == Network.ActivateFunction.Sigmoid)
-                {
-                    Array.Clear(idealValues, 0, outputSize);
-                } else
-                {
-                    for(int j=0; j<outputSize; j++)
-                    {
-                        idealValues[j] = -1;
-                    }
-                }
+                oldIdealValue = idealValues[_desiredDatas[dataIndex[i]]];
                 idealValues[_desiredDatas[dataIndex[i]]] = 1.0f;
 
-                // learning rate, momentum, weight decay
-                network.Backpropagation(idealValues, 0.3, 0.7, 0.000);
-                if( stopOperation)
+                // learning rate, momentum, weight decay/l2 reg
+    
+                network.Backpropagation(idealValues, 0.1, 0.0, 6, 60000);
+
+                idealValues[_desiredDatas[dataIndex[i]]] = oldIdealValue;
+                if ( stopOperation)
                 {
                     break;
                 }
