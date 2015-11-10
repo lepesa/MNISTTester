@@ -19,10 +19,11 @@ namespace TestClient
     public class Network
     {
         
-        public enum ActivateFunction { InputLayer, Sigmoid, Tanh };
+        public enum ActivateFunction { InputLayer, Sigmoid, Tanh, Softmax };
         public enum CostFunction { Quadratic, CrossEntropy };
 
         public readonly Layer[] layers;
+
 
         // Sigmoidin / Tanh:n vaatimat pointterit
      
@@ -63,6 +64,11 @@ namespace TestClient
                 {
                     layers[i].ActivateFunc = ActivateTanh;
                     layers[i].DerivateFunc = DerivateTanh;
+                }
+                if( funcs[i] == ActivateFunction.Softmax)
+                {
+                    layers[i].ActivateFunc = ActivateSoftmax;
+                    layers[i].DerivateFunc = DerivateSoftmax;
                 }
 
             }
@@ -144,13 +150,16 @@ namespace TestClient
                         output3 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
                     }
                     output += output2 + output3 + output4;
-                    // sigmoid: 1.0 / (1 + Math.exp(-1.0 * d));
-                    //                   layers[i].outputValue[j] = 1.0 / ( 1.0 + Math.Exp( -1.0 * output ));
-                    // tanh
-                    //layers[i].outputValue[j] = (Math.Exp(output * 2.0) - 1.0) / (Math.Exp(output * 2.0) + 1.0);
 
                     currentLayer.outputValue[j] = currentLayer.ActivateFunc(output);
                 }  
+
+                if( currentLayer.activateFunctionType == ActivateFunction.Softmax)
+                {
+                    CalculateSoftmaxBuffer(currentLayer.outputValue);
+                }
+
+
             }
         }
 
@@ -178,6 +187,31 @@ namespace TestClient
             return (1.0 - Math.Pow(ActivateTanh(value), 2.0));
         }
 
+        private static void CalculateSoftmaxBuffer(double[] values)
+        {
+            double sum = 0;
+            for (int i = 0; i < values.Length; i++)
+            {
+                sum += Math.Exp(values[i]);
+            }
+            for(int i=0; i < values.Length; i++)
+            {
+                values[i] =  Math.Exp(values[i]) / sum;
+            }
+
+        }
+
+        private static double ActivateSoftmax(double value)
+        {
+            return value;
+            
+        }
+
+        // Softmax derivaatta. Sama kuin sigmoidilla
+        private static double DerivateSoftmax(double value)
+        {
+            return value * (1 - value);
+        }
 
         /// <summary>
         /// Tyhjentää Minibatchin käyttämien muuttujien arvot.

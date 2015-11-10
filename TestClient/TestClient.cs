@@ -47,7 +47,7 @@ namespace TestClient
         {
 
             // 3 layer network, 784 * 30 * 10
-            network = new Network(new int[] { 28 * 28, 30, 10 }, new Network.ActivateFunction[]{ Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Sigmoid }, Network.CostFunction.CrossEntropy);
+            network = new Network(new int[] { 28 * 28, 30, 10 }, new Network.ActivateFunction[]{ Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Softmax }, Network.CostFunction.CrossEntropy);
             network.ResetGaussian();
             nrg = new Random();
         }
@@ -151,7 +151,7 @@ namespace TestClient
 
             double oldIdealValue;
             // Output-arvot edustavat numeroita 0...9. Asetetaan haluttu indeksi ykköseksi.
-            if (network.layers[network.layers.Length - 1].activateFunctionType == Network.ActivateFunction.Sigmoid)
+            if (network.layers[network.layers.Length - 1].activateFunctionType != Network.ActivateFunction.Tanh)
             {
                 Array.Clear(idealValues, 0, outputSize);
             }
@@ -213,7 +213,7 @@ namespace TestClient
 
             double oldIdealValue;
             // Output-arvot edustavat numeroita 0...9. Asetetaan haluttu indeksi ykköseksi.
-            if (network.layers[network.layers.Length - 1].activateFunctionType == Network.ActivateFunction.Sigmoid)
+            if (network.layers[network.layers.Length - 1].activateFunctionType != Network.ActivateFunction.Tanh)
             {
                 Array.Clear(idealValues, 0, outputSize);
             }
@@ -271,7 +271,7 @@ namespace TestClient
         private double NormalizeImageData(byte data, Network.ActivateFunction func)
         {
             double temp = (double)data;
-            if (func == Network.ActivateFunction.Sigmoid)
+            if (func != Network.ActivateFunction.Tanh)
             {
                 // väli: 0...1
                 return (temp / 255);
