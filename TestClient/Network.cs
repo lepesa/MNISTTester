@@ -19,7 +19,7 @@ namespace TestClient
     public class Network
     {
         
-        public enum ActivateFunction { InputLayer, Sigmoid, Tanh, Softmax };
+        public enum ActivateFunction { InputLayer, Sigmoid, Tanh, Softmax, Softplus, ReLU };
         public enum CostFunction { Quadratic, CrossEntropy };
 
         public readonly Layer[] layers;
@@ -69,6 +69,17 @@ namespace TestClient
                 {
                     layers[i].ActivateFunc = ActivateSoftmax;
                     layers[i].DerivateFunc = DerivateSoftmax;
+                }
+                if (funcs[i] == ActivateFunction.Softplus)
+                {
+                    layers[i].ActivateFunc = ActivateSoftplus;
+                    layers[i].DerivateFunc = DerivateSoftplus;
+                }
+
+                if (funcs[i] == ActivateFunction.ReLU)
+                {
+                    layers[i].ActivateFunc = ActivateReLU;
+                    layers[i].DerivateFunc = DerivateReLU;
                 }
 
             }
@@ -162,6 +173,42 @@ namespace TestClient
 
             }
         }
+
+        private static double ActivateReLU(double value)
+        {
+            if (value < 0)
+			{
+                return 0;
+            }
+			else
+			{
+                return value;
+			}
+        }
+
+        private static double DerivateReLU(double value)
+        {
+            if (value > 0)
+			{
+                return 1;
+			}
+            else
+			{
+                return 0;
+			}
+        }
+
+
+        private static double ActivateSoftplus(double value)
+        {
+            return Math.Log(1 + Math.Exp(value));
+        }
+
+        private static double DerivateSoftplus(double value)
+        {
+            return (1 / (1 + Math.Exp(-1 * value)));
+        }
+
 
         // Sigmoid -funktio feedforwardia varten
         private static double ActivateSigmoid(double value)
