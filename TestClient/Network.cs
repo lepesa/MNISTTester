@@ -177,25 +177,25 @@ namespace TestClient
         private static double ActivateReLU(double value)
         {
             if (value < 0)
-			{
+            {
                 return 0;
             }
-			else
-			{
+            else
+            {
                 return value;
-			}
+            }
         }
 
         private static double DerivateReLU(double value)
         {
             if (value > 0)
-			{
+            {
                 return 1;
-			}
+            }
             else
-			{
+            {
                 return 0;
-			}
+            }
         }
 
 
