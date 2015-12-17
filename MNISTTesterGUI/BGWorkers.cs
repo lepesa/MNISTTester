@@ -96,7 +96,6 @@ namespace MNISTLoaderGUI
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-
         private void timer_UpdateProgressBar(object sender, System.EventArgs e)
         {
 

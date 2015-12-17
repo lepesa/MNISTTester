@@ -144,7 +144,7 @@ namespace MNISTLoaderGUI
         /// <param name="text">Lokiin lisättävä teksti, ilman rivinvaihtoa</param>
         public void AddLogLine(string text)
         {
-            AddLog(text + "\r\n");
+            AddLog(text + System.Environment.NewLine);
         }
 
         /// <summary>

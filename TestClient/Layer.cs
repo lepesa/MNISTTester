@@ -16,7 +16,9 @@ using System;
 namespace TestClient
 {
 
-    // Neuroverkon yhden layerin toteutus. 
+    /// <summary>
+    /// Neuroverkon yhden layerin toteutus.
+    /// </summary>
 
     public class Layer
     {
@@ -35,7 +37,10 @@ namespace TestClient
         public  Func<double, double> ActivateFunc = null;
         public Network.ActivateFunction activateFunctionType;
 
-        // Inputlayerilla ei ole tarvetta matriisille.
+        /// <summary>
+        /// Alustaa input layerin. Inputlayerilla ei ole tarvetta matriisille.
+        /// </summary>
+        /// <param name="nc">Neuronien määrä</param>
         public Layer(int nc)
         {
             neuronCount = nc;
@@ -45,14 +50,13 @@ namespace TestClient
         /// <summary>
         /// Alustetaan hidden/output layer, parametrina tason neutronien määrä ja edellisen layerin neutronien määrä.
         /// </summary>
-        /// <param name="nc"></param>
-        /// <param name="prevLayerNeuronCount"></param>
+        /// <param name="nc">Neuronien määrä</param>
+        /// <param name="prevLayerNeuronCount">Edellisen layerin neuronien määrä</param>
         public Layer(int nc, int prevLayerNeuronCount)
         {
             neuronCount = nc;
 
             InitOutputErrorValues(nc);
-
 
             // Painot vaativat matriisin. Tehdään jagged array.
 
@@ -75,7 +79,11 @@ namespace TestClient
                 gradients[i] = new double[nc];
             }
         }
-        
+
+        /// <summary>
+        /// Luo tarpeelliset tietorakenteet kaikile layereille (input/hidden/output)
+        /// </summary>
+        /// <param name="nc">Neuronien määrä</param>
         private void InitOutputErrorValues(int nc)
         {
             outputValue = new double[nc + 1];
@@ -86,7 +94,7 @@ namespace TestClient
         }
 
         /// <summary>
-        /// Tyhjentää gradientin. Tähän tallennetaan minibatchin summat
+        /// Tyhjentää gradientin. Tähän tallennetaan minibatchin kumulatiivinen virhe
         /// </summary>
         public void ResetGradients()
         {
@@ -121,6 +129,7 @@ namespace TestClient
                 }
             }
         }
+
         /// <summary>
         /// Asetetaan painoille gaussin käyrän mukaiset satunnaisarvot.
         /// </summary>

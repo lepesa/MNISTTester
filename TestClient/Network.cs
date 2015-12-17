@@ -43,9 +43,7 @@ namespace TestClient
             parMomentum = momentum;
             parweightDecay = weightDecay;
         }
-
-
-
+                
         /// <summary>
         /// Alustaa verkon: tekee layerit, asettaa aktivointi ja hintafunktion.
         /// Lisäksi asettaa hyperparametrit.
@@ -117,7 +115,9 @@ namespace TestClient
             }
         }
 
-        // Aseta uudet satunnaiset painotukset kaikille layereille
+        /// <summary>
+        /// Aseta uudet satunnaiset painotukset kaikille layereille
+        /// </summary>
         public void Reset()
         {
             foreach (var layer in layers)
@@ -125,7 +125,9 @@ namespace TestClient
                 layer.Reset();
             }
         }
-        // Aseta uudet gaussin käyrän mukaisesti satunnaiset painotukset kaikille layereille
+        /// <summary>
+        /// Aseta uudet gaussin käyrän mukaisesti satunnaiset painotukset kaikille layereille
+        /// </summary>
         public void ResetGaussian()
         {
             foreach (var layer in layers)
@@ -134,9 +136,10 @@ namespace TestClient
             }
         }
 
-
-        // Feedforward: syötä input arvot ja saa output-arvot vastaukseksi kun ollaan 
-        // laskettu ne verkon läpi. Verkon tila ei muutu
+        /// <summary>
+        /// Feedforward: syötä input arvot ja saa output-arvot vastaukseksi kun ollaan
+        /// laskettu ne verkon läpi. Layereiden output-arvot muuttuvat.
+        /// </summary> 
         public void FeedForward()
         {
             Layer currentLayer;
@@ -153,7 +156,6 @@ namespace TestClient
 
             for (int i = 1; i < layers.Length; i++)
             {
-
                 currentLayer = layers[i];
                 prevLayer = layers[i - 1];
                 prevLength = prevLayer.outputValue.Length;
@@ -165,7 +167,7 @@ namespace TestClient
                    
                     neur2 = prevLength % 4;
                     neur = prevLength - 1;
-
+                    // optimointi
                     switch (neur2)
                     {
                         case 1:
@@ -204,7 +206,12 @@ namespace TestClient
 
             }
         }
-
+        /// <summary>
+        /// Toteuttaa Rectified Linear Unitin aktivointifunktion.
+        /// f(x) = max(0, x)
+        /// </summary>
+        /// <param name="value">Arvo</param>
+        /// <returns>Arvo ReLUn jälkeen</returns>
         private static double ActivateReLU(double value)
         {
             if (value < 0)
@@ -217,6 +224,12 @@ namespace TestClient
             }
         }
 
+        /// <summary>
+        /// Toteuttaa Rectified Linear Unitin derivaatan:
+        /// koska f(x) = max(0,x), niin derivaatta on joko 0 tai 1.
+        /// </summary>
+        /// <param name="value">Arvo</param>
+        /// <returns>Arvo RerLUn derivaatan jälkeen</returns>
         private static double DerivateReLU(double value)
         {
             if (value > 0)
@@ -229,42 +242,76 @@ namespace TestClient
             }
         }
 
-
+        /// <summary>
+        /// Toteuttaa Softplus funktion f(x) = ln(1+e^x)
+        /// </summary>
+        /// <param name="value">Arvo</param>
+        /// <returns>Arvo Softplussin jälkeen</returns>
         private static double ActivateSoftplus(double value)
         {
             return Math.Log(1 + Math.Exp(value));
         }
 
+        /// <summary>
+        /// Toteuttaa Softplus funktion f(x) = ln(1+e^x) derivaatan, joka on
+        /// f'(x) = e^x/(e^x+1) = 1/(1+e^-x)
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
         private static double DerivateSoftplus(double value)
         {
             return (1 / (1 + Math.Exp(-1 * value)));
         }
 
 
-        // Sigmoid -funktio feedforwardia varten
+        /// <summary>
+        /// Toteuttaa sigmoid-funktion. S(t)= 1 / (1+e^-t)
+        /// </summary>
+        /// <param name="value">Arvo</param>
+        /// <returns>Arvo sigmoidin jälkeen</returns>
         private static double ActivateSigmoid(double value)
         {
             return (1.0 / (1 + Math.Exp(-1.0 * value)));
         }
 
-        // Sigmoid -funktio back propagationia varten
+        /// <summary>
+        /// Toteuttaa sigmoid-funktion. S(t)= 1 / (1+e^-t) derivaatan, joka on
+        /// S'(t) = t * (1-t)
+        /// </summary>
+        /// <param name="value">Arvo</param>
+        /// <returns>Arvo Sigmoidin derivaatan jälkeen</returns>
         private static double DerivateSigmoid(double value)
         {
             return value * (1 - value);
         }
 
-        // Tanh -funktio feedforwardia varten
+        /// <summary>
+        /// Toteuttaa tanh-funktion (Hyperbolic tangent). Tähän käytetään kirjastofunktiota.
+        /// </summary>
+        /// <param name="value">Arvo</param>
+        /// <returns>Arvo TanH:n jälkeen</returns>
         private static double ActivateTanh(double value)
         {
             return Math.Tanh(value);
         }
 
-        // Tanh -funktio back propagationia varten
+        /// <summary>
+        /// Toteuttaa tanh-funktion derivaatan, joka on
+        /// f'(x) = 1 - (Tanh(x)^2)
+        /// </summary>
+        /// <param name="value">Arvo</param>
+        /// <returns>Arvo TanH derivaatan jälkeen</returns>
         private static double DerivateTanh(double value)
         {
             return (1.0 - Math.Pow(ActivateTanh(value), 2.0));
         }
 
+        /// <summary>
+        /// Laskee softmaxin annetuille arvoille.
+        /// Ensiksi lasketaan syötearvojen e^(xi) summa ja sen jälkeen jokainen syöte jaetaan summalla. Tätä käytetään laskiessa
+        /// Feedforwardissa.
+        /// </summary>
+        /// <param name="values">Layerin output-arvot</param>
         private static void CalculateSoftmaxBuffer(double[] values)
         {
             double sum = 0;
@@ -278,14 +325,25 @@ namespace TestClient
             }
 
         }
-
+        /// <summary>
+        /// Palauttaa softmaxin halutulle arvolle. Tämä lasketaan myöhemmin CalculateSoftmaxBufferissa, 
+        /// koska tarvitaan tietoon _kaikkien_ output-arvot. Joten palautetaan vain saatu arvo, jotta  
+        /// FeedForwardin logiikka pysyy yksinkertaisena.
+        /// </summary>
+        /// <param name="value">Arvo</param>
+        /// <returns>Saatu input arvo</returns>
         private static double ActivateSoftmax(double value)
         {
             return value;
             
         }
 
-        // Softmax derivaatta. Sama kuin sigmoidilla
+        /// <summary>
+        /// Softmaxin derivaatta on sama kuin sigmoidilla, eli 
+        /// S'(t) = t * (1-t)
+        /// </summary>
+        /// <param name="value">Arvo</param>
+        /// <returns>Arvo Softmaxin derivaatan jälkeen</returns>
         private static double DerivateSoftmax(double value)
         {
             return value * (1 - value);
@@ -293,11 +351,10 @@ namespace TestClient
 
         /// <summary>
         /// Tyhjentää Minibatchin käyttämien muuttujien arvot.
+        /// Huomaa että gradients tyhjennetään backprop-metodissa.
         /// </summary>
         public void ClearMiniBatchValues()
         {
-            
-
             for (int i = 1; i < layers.Length; i++)
             {
                 Layer clearLayer = layers[i];
@@ -305,14 +362,12 @@ namespace TestClient
                 {
                     clearLayer.errorValue[j] = 0;
                 }
-
-            }/*
-            for (int i = 0; i < layers.Length; i++)
-            {
-                layers[i].ResetGradients();
-            }*/
+            }
         }
-
+        /// <summary>
+        /// Laskee yhdelle minibatchin stepille virheen. Tämä virhe lisätään gradienttiin, jota käytetään myöhemmin loopin loputtua.
+        /// </summary>
+        /// <param name="desiredResult">Halutut verkon tulokset</param>
         public void CalculateMiniBatchError(double[] desiredResult)
         {
             // Lasketaan odotettujen arvojen ja todellisten arvojen välinen virhe: output layer
@@ -344,7 +399,6 @@ namespace TestClient
             Layer hiddenLayer;
 
             // Lasketaan odotettujen arvojen ja todellisten arvojen välinen virhe: hidden layers
-
             int k;
             for (i = layers.Length - 2; i > 0; i--)
             {
@@ -361,12 +415,7 @@ namespace TestClient
                     {
                         outputValue += outputLayer.weights[j][k] * outputLayer.errorValue[k];
                     }
-
-                    // sigmoid derivate, sigmoid(x) * (1-sigmoid(x))
-                    // tanh derviate: (1-tanh(x)^2)
-
                     hiddenLayer.errorValue[j] = hiddenLayer.DerivateFunc(hiddenLayer.outputValue[j]) * outputValue;
-
                 }
             }
 
@@ -389,15 +438,15 @@ namespace TestClient
                 prevLayerCount = previousLayer.neuronCount;
 
                 // Bias  päivitys
-                for (j = currentLayerCount - 1; j >= 0; j--)
+                for (k = currentLayerCount - 1; k >= 0; k--)
                 {
                     // Paino kerrotaan 1.0:lla, koska bias
-                    currentLayer.errorValueTemp[j] = 1.0 * currentLayer.errorValue[j];
+                    currentLayer.errorValueTemp[k] = 1.0 * currentLayer.errorValue[k];
                     
-                    currentLayer.gradients[biasIndex][j] += currentLayer.errorValueTemp[j];
+                    currentLayer.gradients[biasIndex][k] += currentLayer.errorValueTemp[k];
                 }
 
-                // Normaalien painotuksein päivitys
+                // Normaalien painotuksien päivitys
                 for (j = 0; j < prevLayerCount; j++)
                 {
                     prevOutputValue = previousLayer.outputValue[j];
@@ -410,13 +459,20 @@ namespace TestClient
                     }
                 }
             }
-
         }
 
+        /// <summary>
+        /// Päivitetään minibatchin painotuksien arvot. Tämä vastaa Backpropagation -metodia Online -oppimisessa.
+        /// </summary>
+        /// <param name="learningRate">Oppimiskerroin</param>
+        /// <param name="momentum">Momenttikerroin</param>
+        /// <param name="lambda">Weight decay kerroin</param>
+        /// <param name="batchSize">Minibatchin koko</param>
+        /// <param name="trainingSize">Opetusaineiston koko</param>
         public void UpdateMinibatchValues(double learningRate, double momentum, double lambda, int batchSize, int trainingSize)
         {
-            Layer currentLayer;      // layers[i]
-            Layer previousLayer;     // layers[i-1]
+            Layer currentLayer;      
+            Layer previousLayer;     
             int i;
             int j;
             int k;
@@ -424,9 +480,10 @@ namespace TestClient
             int prevLayerCount;
 
 
-            
+            // Lasketaan weight decay arvo valmiiksi
             double l2reg = 1 - (learningRate * (lambda/ trainingSize));
 
+            // Opetuskerroin ja momentti pitää jakaa batchin koolla, koska kumulatiivinen summa
             learningRate = learningRate / batchSize;
             momentum = momentum / batchSize;
 
@@ -435,33 +492,31 @@ namespace TestClient
             // Nyt on virheet tiedossa. Päivitetään verkon painotukset lopusta alkuun.
             for (i = layers.Length - 1; i > 0; i--)
             {
-
                 currentLayer = layers[i];
                 previousLayer = layers[i - 1];
 
-                // calculate biases
                 biasIndex = currentLayer.weights.Length - 1;
 
                 currentLayerCount = currentLayer.neuronCount;
                 prevLayerCount = previousLayer.neuronCount;
 
                 // Bias  päivitys
-                for (j = currentLayerCount - 1; j >= 0; j--)
+                for (k = currentLayerCount - 1; k >= 0; k--)
                 {
                     // Saadaam delta-arvo  derivoitu virhearvosta kerrottuna oppimisarvolla [0..1]. Laitetaan tämä talteen ja lisäksi lisätään se painoarvoon                   
-                    weightDiff  = learningRate * currentLayer.gradients[biasIndex][j];
+                    weightDiff  = learningRate * currentLayer.gradients[biasIndex][k];
 
                     // Lisätään delta, nyt paino on w(t+1)
-                    currentLayer.weights[biasIndex][j] += weightDiff;
+                    currentLayer.weights[biasIndex][k] += weightDiff;
 
                     // Lisätään painoarvoon momenttiarvo kerrottuna edellisen kerran delta-arvolla
-                    currentLayer.weights[biasIndex][j] += momentum * currentLayer.prevWeightDiffs[biasIndex][j];
+                    currentLayer.weights[biasIndex][k] += momentum * currentLayer.prevWeightDiffs[biasIndex][k];
 
                     // Asetetaan delta-arvo talteen seuraavaa laskukertaa varten
-                    currentLayer.prevWeightDiffs[biasIndex][j] = weightDiff;
+                    currentLayer.prevWeightDiffs[biasIndex][k] = weightDiff;
 
                     // Nollataan summagradientti
-                    currentLayer.gradients[biasIndex][j] = 0;
+                    currentLayer.gradients[biasIndex][k] = 0;
                 }
 
                 // Normaalien painotuksien päivitys
@@ -478,17 +533,24 @@ namespace TestClient
                         // Vanha delta talteen seuraavaa kierrosta varten
                         currentLayer.prevWeightDiffs[j][k] = weightDiff;
 
-                        // Nollataan gradienttisumma
+                        // Nollataan summagradientti
                         currentLayer.gradients[j][k] = 0;
                     }
                 }
             }
         }
 
+        /// <summary>
+        /// Opetetaan verkkoa. Käytännössä siis muutetaan verkon painotuksia odotettujen ja laskettujen arvojen perusteella.
+        /// Ennen tätä on yleensä feedforward suoritettu, jotta on jotain arvoja mitä opettaa.
+        /// </summary>
+        /// <param name="desiredResult">Verkon haluttu tulos</param>
+        /// <param name="learningRate">Oppimiskerroin</param>
+        /// <param name="momentum">Momenttikerroin</param>
+        /// <param name="lambda">Weight decay kerroin</param>
+        /// <param name="trainingSize">Opetusaineiston koko</param>
 
-         // Opetetaan verkkoa. Käytännössä siis muutetaan verkon painotuksia odotettujen ja laskettujen arvojen perusteella.
-         // Ennen tätä on yleensä feedforward suoritettu, jotta on jotain arvoja mitä opettaa.
-         public virtual void Backpropagation(double[] desiredResult, double learningRate, double momentum, double lambda, int learningSize)
+        public virtual void Backpropagation(double[] desiredResult, double learningRate, double momentum, double lambda, int trainingSize)
         { 
             Layer outputLayer = layers[layers.Length - 1];
             double outputValue;
@@ -539,17 +601,16 @@ namespace TestClient
                     }
 
                     hiddenLayer.errorValue[j] = hiddenLayer.DerivateFunc(hiddenLayer.outputValue[j]) * outputValue;
-
                 }
             }
 
-            Layer currentLayer;      // layers[i]
-            Layer previousLayer;     // layers[i-1]
+            Layer currentLayer;
+            Layer previousLayer;
 
             int biasIndex;
             double weightDiff;
 
-            double l2reg = 1 - (learningRate * (lambda / learningSize));
+            double l2reg = 1 - (learningRate * (lambda / trainingSize));
 
             // Nyt on virheet tiedossa. Päivitetään verkon painotukset lopusta alkuun.
             for (i = layers.Length - 1; i > 0; i--)
@@ -565,23 +626,21 @@ namespace TestClient
                 prevLayerCount = previousLayer.neuronCount;
 
                 // Bias  päivitys
-                for (j = currentLayerCount - 1; j >= 0; j--)
+                for (k = currentLayerCount - 1; k >= 0; k--)
                 {
                     // Saadaan delta-arvo  derivoitu virhearvosta kerrottuna oppimisarvolla [0..1]. Laitetaan tämä talteen ja lisäksi lisätään se painoarvoon
-                    
-                    weightDiff = currentLayer.errorValueTemp[j] = learningRate * currentLayer.errorValue[j];
+                    weightDiff = currentLayer.errorValueTemp[k] = learningRate * currentLayer.errorValue[k];
 
                     // Lisätään delta, nyt paino on w(t+1)
-                    currentLayer.weights[biasIndex][j] += weightDiff + momentum * currentLayer.prevWeightDiffs[biasIndex][j];
+                    currentLayer.weights[biasIndex][k] += weightDiff + momentum * currentLayer.prevWeightDiffs[biasIndex][k];
 
                     // Asetetaan delta-arvo talteen seuraavaa laskukertaa varten
-                    currentLayer.prevWeightDiffs[biasIndex][j] = weightDiff;
+                    currentLayer.prevWeightDiffs[biasIndex][k] = weightDiff;
                 }
 
                 // Normaalien painotuksein päivitys
                 for (j = 0; j < prevLayerCount; j++)
                 {
-
                     for (k = 0; k < currentLayerCount; k++)
                     {
                         // Lasketaan ei-bias arvot. errorValueTemp[x] on learninRate * errorValue[x]. Tämä on saatu laskettua jo biassien laskemisessa.
@@ -590,8 +649,8 @@ namespace TestClient
                         // Lasketaan uusi paino, josta on otettu weight decay, lisätään ero ja momentti
                         currentLayer.weights[j][k] = l2reg * currentLayer.weights[j][k] + weightDiff + momentum * currentLayer.prevWeightDiffs[j][k];
 
+                        // Asetetaan delta-arvo talteen seuraavaa laskukertaa varten
                         currentLayer.prevWeightDiffs[j][k] = weightDiff;
-
                     }
                 }
             }

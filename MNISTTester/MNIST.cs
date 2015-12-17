@@ -122,9 +122,6 @@ namespace MNISTTester
             }
         }
 
-        /*
-         * Datafile's format is  
-         */
         /// <summary>
         /// Lutetaan yksi 32 bittinen luku tiedostosta.
         /// Tiedoston tavujärjestys on BigEndian. Yritetään kääntää järjestelmän haluamaan muotoon tavut.
