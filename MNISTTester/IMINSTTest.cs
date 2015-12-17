@@ -57,5 +57,10 @@ namespace MNISTTester
         /// </summary>
         void SetStopFlag(bool value);
 
+        /// <summary>
+        /// Palauttaa verkon tiedot tekstimuodossa.
+        /// </summary>
+        /// <returns>Verkon tiedot</returns>
+        string GetNetworkInfo();
     }
 }

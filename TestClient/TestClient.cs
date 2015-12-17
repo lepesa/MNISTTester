@@ -47,7 +47,8 @@ namespace TestClient
         {
 
             // 3 layer network, 784 * 30 * 10
-            network = new Network(new int[] { 28 * 28, 30, 10 }, new Network.ActivateFunction[]{ Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Softmax }, Network.CostFunction.CrossEntropy);
+            network = new Network(new int[] { 28 * 28, 60, 10 }, new Network.ActivateFunction[]{ Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Tanh }, Network.CostFunction.CrossEntropy);        // 9790
+            network.SetHyperParameters(0.1, 0.0, 6);
             network.ResetGaussian();
             nrg = new Random();
         }
@@ -181,7 +182,7 @@ namespace TestClient
 
                 // learning rate, momentum, weight decay/l2 reg
     
-                network.Backpropagation(idealValues, 0.1, 0.0, 6, 60000);
+                network.Backpropagation(idealValues, network.parLearningRate, network.parMomentum, network.parweightDecay, 60000);
 
                 idealValues[_desiredDatas[dataIndex[i]]] = oldIdealValue;
                 if ( stopOperation)
@@ -251,7 +252,7 @@ namespace TestClient
                 }
 
                 // learning rate, momentum
-                network.UpdateMinibatchValues(0.1, 0.0, 6, batchSize, 60000);
+                network.UpdateMinibatchValues(network.parLearningRate, network.parMomentum, network.parweightDecay, batchSize, 60000);
                 
               
                 if (stopOperation)
@@ -342,6 +343,42 @@ namespace TestClient
         public void SetStopFlag(bool value)
         {
             stopOperation = value;
+        }
+
+        /// <summary>
+        /// Palauttaa verkon tiedot tekstimuodossa.
+        /// </summary>
+        /// <returns>Verkon tiedot</returns>
+        public string GetNetworkInfo()
+        {
+            // TODO: paremmat statis & StringBuilder 
+            string info = "Network: ";
+            for (int i = 0; i <network.layers.Length;i++)
+            {
+                if( i>0 )
+                {
+                    info += " x ";
+                }
+                info += network.layers[i].neuronCount;
+            }
+
+            info += "\r\nHyperparams: ";
+            info += String.Format("learning rate: {0}, momentum: {1}, lambda/weight decay: {2}/training set size", network.parLearningRate, network.parMomentum, network.parweightDecay);
+            info += "\r\nFuncs:\r\n";
+            for (int i = 1; i < network.layers.Length; i++)
+            {
+                if( (i+ 1) == network.layers.Length)
+                {
+                    info += "* Activate func output layer: ";
+                } else
+                {
+                    info += "* Activate func hidden layer " + i + ": ";
+                }
+                info += network.layers[i].activateFunctionType + "\r\n";
+            }
+            info += "* Cost function: " + network.costFunctionType + "\r\n";
+
+            return info;
         }
     }
 }

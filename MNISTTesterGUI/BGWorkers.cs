@@ -46,6 +46,9 @@ namespace MNISTLoaderGUI
                 AddLogLine("Using mini-batch gradient descent. Batch size: " + miniBatchSize);
             }
 
+            AddLogLine(mnistTester.TestNetwork.GetNetworkInfo());
+
+
             while (!token.IsCancellationRequested && epoch <= maxEpochs)
             {
                 AddLogLine("Starting training epoch: " + epoch);

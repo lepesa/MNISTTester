@@ -24,9 +24,26 @@ namespace TestClient
 
         public readonly Layer[] layers;
 
+        public double parLearningRate = 0.1;
+        public double parMomentum = 0;
+        public double parweightDecay = 0;
+
+        /// <summary>
+        /// Tallentaa verkon hyper parametrit säilöön. Näitä arvoja ei kuitenkaan käytetä suoraan metodeissa.
+        /// </summary>
+        /// <param name="learningRate">Learning rate / epsilon</param>
+        /// <param name="momentum">Momentum / alpha</param>
+        /// <param name="lambda">Weight decay / lambda</param>
+        public void SetHyperParameters(double learningRate, double momentum, double weightDecay)
+        {
+            parLearningRate = learningRate;
+            parMomentum = momentum;
+            parweightDecay = weightDecay;
+        }
+
 
         // Sigmoidin / Tanh:n vaatimat pointterit
-     
+
 
         public CostFunction costFunctionType = CostFunction.Quadratic;
      
@@ -418,7 +435,7 @@ namespace TestClient
                 for (j = currentLayerCount - 1; j >= 0; j--)
                 {
                     // Saadaam delta-arvo  derivoitu virhearvosta kerrottuna oppimisarvolla [0..1]. Laitetaan tämä talteen ja lisäksi lisätään se painoarvoon                   
-                    weightDiff = currentLayer.errorValueTemp[j] = learningRate * currentLayer.errorValue[j];
+                    weightDiff  = learningRate * currentLayer.gradients[biasIndex][j];
 
                     // Lisätään delta, nyt paino on w(t+1)
                     currentLayer.weights[biasIndex][j] += weightDiff;
@@ -433,12 +450,12 @@ namespace TestClient
                     currentLayer.gradients[biasIndex][j] = 0;
                 }
 
-                // Normaalien painotuksein päivitys
+                // Normaalien painotuksien päivitys
                 for (j = 0; j < prevLayerCount; j++)
                 {
                     for (k = 0; k < currentLayerCount; k++)
                     {
-                        // Lasketaan ei-bias arvot. errorValueTemp[x] on learninRate * errorValue[x]. 
+                        // Lasketaan ei-bias arvot
                         weightDiff = learningRate * currentLayer.gradients[j][k];
 
                         // Lasketaan uusi paino, josta on otettu weight decay, lisätään ero ja momentti
