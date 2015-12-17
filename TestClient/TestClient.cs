@@ -47,8 +47,9 @@ namespace TestClient
         {
 
             // 3 layer network, 784 * 30 * 10
-            network = new Network(new int[] { 28 * 28, 60, 10 }, new Network.ActivateFunction[]{ Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Tanh }, Network.CostFunction.CrossEntropy);        // 9790
-            network.SetHyperParameters(0.1, 0.0, 6);
+            network = new Network(new int[] { 28 * 28, 60, 10 }, new Network.ActivateFunction[]{ Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Tanh }, Network.CostFunction.CrossEntropy, 0.1, 0.0, 6);        // 9790
+            //network = new Network(new int[] { 28 * 28, 200, 10 }, new Network.ActivateFunction[] { Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Tanh }, Network.CostFunction.CrossEntropy, 0.1, 0.0, 6);        // 9832
+
             network.ResetGaussian();
             nrg = new Random();
         }
@@ -352,32 +353,28 @@ namespace TestClient
         public string GetNetworkInfo()
         {
             // TODO: paremmat statis & StringBuilder 
-            string info = "Network: ";
-            for (int i = 0; i <network.layers.Length;i++)
+            string info = "Network:\r\n";
+
+            for (int i = 0; i < network.layers.Length; i++)
             {
-                if( i>0 )
+                if( i == 0)
                 {
-                    info += " x ";
+                    info += String.Format("Input layer, {0} nodes, activation func: {1}", network.layers[i].neuronCount, network.layers[i + 1].activateFunctionType);
                 }
-                info += network.layers[i].neuronCount;
+                else if ((i + 1) == network.layers.Length)
+                {
+                    info += String.Format("Output layer, {0} nodes, Cost func: {1}", network.layers[i].neuronCount, network.costFunctionType);
+                }
+                else
+                {
+                    info += String.Format("Hidden layer {2}, {0} nodes, activation func: {1}", network.layers[i].neuronCount, network.layers[i + 1].activateFunctionType, i);
+                }
+                info += "\r\n";
             }
 
-            info += "\r\nHyperparams: ";
+            info += "\r\nHyperparams:\r\n";
             info += String.Format("learning rate: {0}, momentum: {1}, lambda/weight decay: {2}/training set size", network.parLearningRate, network.parMomentum, network.parweightDecay);
-            info += "\r\nFuncs:\r\n";
-            for (int i = 1; i < network.layers.Length; i++)
-            {
-                if( (i+ 1) == network.layers.Length)
-                {
-                    info += "* Activate func output layer: ";
-                } else
-                {
-                    info += "* Activate func hidden layer " + i + ": ";
-                }
-                info += network.layers[i].activateFunctionType + "\r\n";
-            }
-            info += "* Cost function: " + network.costFunctionType + "\r\n";
-
+            
             return info;
         }
     }

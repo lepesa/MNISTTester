@@ -28,6 +28,9 @@ namespace TestClient
         public double parMomentum = 0;
         public double parweightDecay = 0;
 
+        // Sigmoidin / Tanh:n vaatimat pointterit
+        public CostFunction costFunctionType = CostFunction.Quadratic;
+
         /// <summary>
         /// Tallentaa verkon hyper parametrit säilöön. Näitä arvoja ei kuitenkaan käytetä suoraan metodeissa.
         /// </summary>
@@ -42,20 +45,33 @@ namespace TestClient
         }
 
 
-        // Sigmoidin / Tanh:n vaatimat pointterit
 
+        /// <summary>
+        /// Alustaa verkon: tekee layerit, asettaa aktivointi ja hintafunktion.
+        /// Lisäksi asettaa hyperparametrit.
+        /// </summary>
+        /// <param name="layerSizes">Layerien nodemäärät</param>
+        /// <param name="funcs">Aktivointifunktiot per layer</param>
+        /// <param name="cost">Hintafunktio output-layerille</param>
+        /// <param name="learningRate">Learning rate / epsilon</param>
+        /// <param name="momentum">Momentum / alpha</param>
+        /// <param name="lambda">Weight decay / lambda</param>
+        public Network(int[] layerSizes, ActivateFunction[] funcs, CostFunction cost, double learningRate, double momentum, double weightDecay) : this(layerSizes, funcs, cost)
+        {
+            SetHyperParameters(learningRate, momentum, weightDecay);
+        }
 
-        public CostFunction costFunctionType = CostFunction.Quadratic;
-     
-        // Verkon alustus. Saadaan tietoon verkon koko, aktivointifunktio ja maksufunktio
+        /// <summary>
+        /// Alustaa verkon: tekee layerit, asettaa aktivointi ja hintafunktion
+        /// </summary>
+        /// <param name="layerSizes">Layerien nodemäärät</param>
+        /// <param name="funcs">Aktivointifunktiot per layer</param>
+        /// <param name="cost">Hintafunktio output-layerille</param>
         public Network(int[] layerSizes, ActivateFunction[] funcs, CostFunction cost)
         {
-
             layers = new Layer[layerSizes.Length];
-
             costFunctionType = cost;
             
-
             for (int i = 0; i < layerSizes.Length; i++)
             {
                 if (i == 0)
@@ -98,11 +114,9 @@ namespace TestClient
                     layers[i].ActivateFunc = ActivateReLU;
                     layers[i].DerivateFunc = DerivateReLU;
                 }
-
             }
-           
-
         }
+
         // Aseta uudet satunnaiset painotukset kaikille layereille
         public void Reset()
         {
