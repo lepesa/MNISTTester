@@ -33,6 +33,11 @@ namespace TestClient
 
         public double[][] gradients;
 
+        public double dropOutValue;
+        public int[] dropOut;
+
+        Random nrg = new Random();
+
         public  Func<double, double> DerivateFunc = null;
         public  Func<double, double> ActivateFunc = null;
         public Network.ActivateFunction activateFunctionType;
@@ -52,9 +57,10 @@ namespace TestClient
         /// </summary>
         /// <param name="nc">Neuronien määrä</param>
         /// <param name="prevLayerNeuronCount">Edellisen layerin neuronien määrä</param>
-        public Layer(int nc, int prevLayerNeuronCount)
+        public Layer(int nc, int prevLayerNeuronCount, int dropOutval)
         {
             neuronCount = nc;
+            dropOutValue = dropOutval;
 
             InitOutputErrorValues(nc);
 
@@ -89,6 +95,8 @@ namespace TestClient
             outputValue = new double[nc + 1];
             errorValue = new double[nc + 1];
             errorValueTemp = new double[nc + 1];
+
+            dropOut = new int[nc + 1];
 
             outputValue[nc] = 1;
         }
@@ -156,5 +164,61 @@ namespace TestClient
                 }
             }
         }
+
+        /// <summary>
+        /// Nollataan dropOut -arvot. 0 = ei dropout
+        /// </summary>
+        public void ResetDropOut()
+        {
+            if( dropOutValue == 0)
+            {
+                return;
+            }
+            Array.Clear(dropOut, 0, dropOut.Length);
+        }
+
+        /// <summary>
+        /// Asettaa dropOut -arvot todennäköisyyden p perusteella. Ainakin yksi noodeista on aina laskettavana ja vähintään yksi noodeista tiputetaan
+        /// jos p>0. 
+        /// </summary>
+        /// <param name="dropOutBias">Voiko bias olla tiputettuna. true/false.</param>
+        public void CreateDropOut(bool dropOutBias=false)
+        {
+            if( dropOutValue == 0 )
+            {
+                return;
+            }
+            int dropped = 0;
+            int length = dropOut.Length-1;
+            for(int i=0; i<=length; i++)
+            {
+                if(nrg.NextDouble() < dropOutValue)
+                {
+                    dropOut[i] = 1;
+                    dropped++;
+                } else
+                {
+                    dropOut[i] = 0;
+                }
+            }
+
+            // saako tiputtaa bias? Jos ei, niin nollataan varmuuden vuoksi se
+            if( !dropOutBias)
+            {
+                dropOut[length] = 0;
+            }
+
+            // Jos ei yhtään tiputettu niin valitaan ainakin yksi
+            if (dropped == 0)
+            {
+                dropOut[nrg.Next(0, length)] = 1;
+            }
+            // jos kaikki tiputettu, niin valitaan ainakin yksi laskettavaksi.
+            else if (dropped == length)
+            {
+                dropOut[nrg.Next(0, length)] = 0;
+            }
+        }
+
     }
 }

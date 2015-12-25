@@ -48,7 +48,9 @@ namespace TestClient
         {
 
             // 3 layer network, 784 * 30 * 10
-            network = new Network(new int[] { 28 * 28, 60, 10 }, new Network.ActivateFunction[] { Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Tanh }, Network.CostFunction.CrossEntropy, 0.1, 0.0, 0);        // 9778
+            //network = new Network(new int[] { 28 * 28, 60, 10 }, new Network.ActivateFunction[] { Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Tanh }, Network.CostFunction.CrossEntropy, 0.1, 0.0, 0);        // 9778
+
+            network = new Network(new Layer[] { new Layer(28 * 28), new Layer(30, 28*28,0), new Layer(10, 30, 0) }, new Network.ActivateFunction[] { Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Tanh }, Network.CostFunction.CrossEntropy, 0.1, 0.0, 0);        // 9778
             //network = new Network(new int[] { 28 * 28, 60, 10 }, new Network.ActivateFunction[]{ Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Tanh }, Network.CostFunction.CrossEntropy, 0.1, 0.0, 6);        // 9790
             //network = new Network(new int[] { 28 * 28, 200, 10 }, new Network.ActivateFunction[] { Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Tanh }, Network.CostFunction.CrossEntropy, 0.1, 0.0, 6);        // 9832
 
@@ -167,6 +169,13 @@ namespace TestClient
                 }
             }
 
+            // Mahdolliset dropoutit
+
+            for(int i=0; i<network.layers.Length;i++)
+            {
+                network.layers[i].CreateDropOut(false);
+            }
+
             // Opetetaan kuva kerrallaan. Ekana feedforward, sen jälkeen backpropagation.
             // Käytetään kiinteitä arvoja: oppimiskerroin 0.3. momentti on käytössä ja asetettu arvoon 0.1.
             // weight decayta ei ole
@@ -193,6 +202,13 @@ namespace TestClient
                     break;
                 }
             }
+
+            // Drop outit pois, jotta testaaminen olisi ok
+            for (int i = 0; i < network.layers.Length; i++)
+            {
+                network.layers[i].ResetDropOut();
+            }
+
             return;            
         }
 
@@ -229,6 +245,14 @@ namespace TestClient
                 }
             }
 
+            // Mahdolliset dropoutit
+
+            for (int i = 0; i < network.layers.Length; i++)
+            {
+                network.layers[i].CreateDropOut(false);
+            }
+
+
             for (int matIndex = 0; matIndex < materialSize; matIndex+=batchSize, materialIndex+=batchSize)
             {
 
@@ -263,6 +287,12 @@ namespace TestClient
                     break;
                 }
             }
+            // Drop outit pois, jotta testaaminen olisi ok
+            for (int i = 0; i < network.layers.Length; i++)
+            {
+                network.layers[i].ResetDropOut();
+            }
+
             return;
         }
     

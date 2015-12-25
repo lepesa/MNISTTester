@@ -43,18 +43,18 @@ namespace TestClient
             parMomentum = momentum;
             parweightDecay = weightDecay;
         }
-                
+
         /// <summary>
         /// Alustaa verkon: tekee layerit, asettaa aktivointi ja hintafunktion.
         /// Lisäksi asettaa hyperparametrit.
         /// </summary>
-        /// <param name="layerSizes">Layerien nodemäärät</param>
+        /// <param name="createdLayers">Luodut Layerit</param>
         /// <param name="funcs">Aktivointifunktiot per layer</param>
         /// <param name="cost">Hintafunktio output-layerille</param>
         /// <param name="learningRate">Learning rate / epsilon</param>
         /// <param name="momentum">Momentum / alpha</param>
         /// <param name="lambda">Weight decay / lambda</param>
-        public Network(int[] layerSizes, ActivateFunction[] funcs, CostFunction cost, double learningRate, double momentum, double weightDecay) : this(layerSizes, funcs, cost)
+        public Network(Layer[] createdLayers, ActivateFunction[] funcs, CostFunction cost, double learningRate, double momentum, double weightDecay) : this(createdLayers, funcs, cost)
         {
             SetHyperParameters(learningRate, momentum, weightDecay);
         }
@@ -62,26 +62,18 @@ namespace TestClient
         /// <summary>
         /// Alustaa verkon: tekee layerit, asettaa aktivointi ja hintafunktion
         /// </summary>
-        /// <param name="layerSizes">Layerien nodemäärät</param>
+        /// <param name="createdLayers">Luodut layerit</param>
         /// <param name="funcs">Aktivointifunktiot per layer</param>
         /// <param name="cost">Hintafunktio output-layerille</param>
-        public Network(int[] layerSizes, ActivateFunction[] funcs, CostFunction cost)
+        public Network(Layer[] createdLayers, ActivateFunction[] funcs, CostFunction cost)
         {
-            layers = new Layer[layerSizes.Length];
+            layers = new Layer[createdLayers.Length];
             costFunctionType = cost;
             
-            for (int i = 0; i < layerSizes.Length; i++)
+            for (int i = 0; i < createdLayers.Length; i++)
             {
-                if (i == 0)
-                {
-                    // input layer
-                    layers[i] = new Layer(layerSizes[i]);
-                }
-                else
-                {
-                    // hidden / output
-                    layers[i] = new Layer(layerSizes[i], layerSizes[i - 1]);
-                }
+                
+                layers[i] = createdLayers[i];
 
                 layers[i].activateFunctionType = funcs[i];
 
