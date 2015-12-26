@@ -17,8 +17,7 @@ using System.Runtime.CompilerServices;
 namespace TestClient
 {
     public class Network
-    {
-        
+    {  
         public enum ActivateFunction { InputLayer, Sigmoid, Tanh, Softmax, Softplus, ReLU };
         public enum CostFunction { Quadratic, CrossEntropy };
 
@@ -78,31 +77,29 @@ namespace TestClient
                 layers[i].activateFunctionType = funcs[i];
 
                 // Asetetaan oikeat funktiot feedforwardia/back propagationia varten
-                if (funcs[i] == ActivateFunction.Sigmoid)
+                switch (funcs[i])
                 {
-                    layers[i].ActivateFunc = ActivateSigmoid;
-                    layers[i].DerivateFunc = DerivateSigmoid;
-                }
-                if (funcs[i] == ActivateFunction.Tanh)
-                {
-                    layers[i].ActivateFunc = ActivateTanh;
-                    layers[i].DerivateFunc = DerivateTanh;
-                }
-                if( funcs[i] == ActivateFunction.Softmax)
-                {
-                    layers[i].ActivateFunc = ActivateSoftmax;
-                    layers[i].DerivateFunc = DerivateSoftmax;
-                }
-                if (funcs[i] == ActivateFunction.Softplus)
-                {
-                    layers[i].ActivateFunc = ActivateSoftplus;
-                    layers[i].DerivateFunc = DerivateSoftplus;
-                }
+                    case ActivateFunction.Sigmoid:
+                        layers[i].ActivateFunc = ActivateSigmoid;
+                        layers[i].DerivateFunc = DerivateSigmoid;
+                        break;
+                    case ActivateFunction.Tanh:
+                        layers[i].ActivateFunc = ActivateTanh;
+                        layers[i].DerivateFunc = DerivateTanh;
+                        break;
+                    case ActivateFunction.Softmax:
+                        layers[i].ActivateFunc = ActivateSoftmax;
+                        layers[i].DerivateFunc = DerivateSoftmax;
+                        break;
+                    case ActivateFunction.Softplus:
+                        layers[i].ActivateFunc = ActivateSoftplus;
+                        layers[i].DerivateFunc = DerivateSoftplus;
+                        break;
 
-                if (funcs[i] == ActivateFunction.ReLU)
-                {
-                    layers[i].ActivateFunc = ActivateReLU;
-                    layers[i].DerivateFunc = DerivateReLU;
+                    case ActivateFunction.ReLU:
+                        layers[i].ActivateFunc = ActivateReLU;
+                        layers[i].DerivateFunc = DerivateReLU;
+                        break;
                 }
             }
         }
@@ -138,54 +135,26 @@ namespace TestClient
             Layer prevLayer;
 
             double output;
-            double output2;
-            double output3;
-            double output4;
             int prevLength;
             int neur;
-            int neur2;
+
             int j;
 
             for (int i = 1; i < layers.Length; i++)
             {
                 currentLayer = layers[i];
                 prevLayer = layers[i - 1];
-                prevLength = prevLayer.outputValue.Length;
+                prevLength = prevLayer.outputValue.Length -1;
                 for (j = currentLayer.neuronCount-1; j >= 0;  j--)
                 {
+
                     // TODO: Dot product
                     // Calculate Oneur * Wneur*J + ... + ( 1 * Bias)
-                    output = output2 = output3 = output4 = 0;
-                   
-                    neur2 = prevLength % 4;
-                    neur = prevLength - 1;
-                    // optimointi
-                    switch (neur2)
+                    output = 0;
+                    for (neur = prevLength; neur >= 0; neur--)
                     {
-                        case 1:
-                            output3 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
-                            break;
-                        case 2:
-                            output2 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
-                            output3 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
-                            break;
-                        case 3:
-                            output2 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
-                            output2 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
-                            output3 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
-                            break;
-                        default:
-                            break;
+                        output += prevLayer.outputValue[neur] * currentLayer.weights[neur][j];
                     }
-                    
-                    while (neur>=3)
-                    {
-                        output += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
-                        output2 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
-                        output2 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
-                        output3 += prevLayer.outputValue[neur] * currentLayer.weights[neur--][j];
-                    }
-                    output += output2 + output3 + output4;
 
                     currentLayer.outputValue[j] = currentLayer.ActivateFunc(output);
                 }  
@@ -194,10 +163,9 @@ namespace TestClient
                 {
                     CalculateSoftmaxBuffer(currentLayer.outputValue);
                 }
-
-
             }
         }
+
         /// <summary>
         /// Toteuttaa Rectified Linear Unitin aktivointifunktion.
         /// f(x) = max(0, x)
