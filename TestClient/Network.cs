@@ -131,38 +131,78 @@ namespace TestClient
         /// </summary> 
         public void FeedForward()
         {
-            Layer currentLayer;
-            Layer prevLayer;
-
-            double output;
-            int prevLength;
-            int neur;
-
-            int j;
-
             for (int i = 1; i < layers.Length; i++)
             {
-                currentLayer = layers[i];
-                prevLayer = layers[i - 1];
-                prevLength = prevLayer.outputValue.Length -1;
-                for (j = currentLayer.neuronCount-1; j >= 0;  j--)
+                if (layers[i].dropOutValue == 0 && layers[i - 1].dropOutValue == 0)
                 {
-
-                    // TODO: Dot product
-                    // Calculate Oneur * Wneur*J + ... + ( 1 * Bias)
-                    output = 0;
-                    for (neur = prevLength; neur >= 0; neur--)
-                    {
-                        output += prevLayer.outputValue[neur] * currentLayer.weights[neur][j];
-                    }
-
-                    currentLayer.outputValue[j] = currentLayer.ActivateFunc(output);
-                }  
-
-                if( currentLayer.activateFunctionType == ActivateFunction.Softmax)
+                    FeedForward(layers[i], layers[i - 1]);
+                } else
                 {
-                    CalculateSoftmaxBuffer(currentLayer.outputValue);
+                    FeedForwardDropout(layers[i], layers[i - 1]);
+                }   
+            }
+        }
+
+        /// <summary>
+        /// Tekee feedforwardin kahden layerin välillä. Tulokset tallennetaan currentLayeriin
+        /// </summary>
+        /// <param name="currentLayer">Tuloslayeri</param>
+        /// <param name="prevLayer">Edellinen layeri</param>
+        public void FeedForward(Layer currentLayer, Layer prevLayer)
+        {
+            double output;
+            int neur;
+            
+            int prevLength = prevLayer.outputValue.Length - 1;
+            for (int j = currentLayer.neuronCount - 1; j >= 0; j--)
+            {
+
+                // TODO: Dot product
+                // Calculate Oneur * Wneur*J + ... + ( 1 * Bias)
+                output = 0;
+                for (neur = prevLength; neur >= 0; neur--)
+                {
+                    output += prevLayer.outputValue[neur] * currentLayer.weights[neur][j];
                 }
+
+                currentLayer.outputValue[j] = currentLayer.ActivateFunc(output);
+            }
+
+            if (currentLayer.activateFunctionType == ActivateFunction.Softmax)
+            {
+                CalculateSoftmaxBuffer(currentLayer.outputValue);
+            }
+        }
+
+        /// <summary>
+        /// Tekee feedforwardin kahden layerin välillä. Tulokset tallennetaan currentLayeriin. Tässä otetaan dropout huomioon
+        /// </summary>
+        /// <param name="currentLayer">Tuloslayeri</param>
+        /// <param name="prevLayer">Edellinen layeri</param>
+        public void FeedForwardDropout(Layer currentLayer, Layer prevLayer)
+        {
+            double output;
+            int neur;
+
+            int prevLength = prevLayer.outputValue.Length - 1;
+            for (int j = currentLayer.neuronCount - 1; j >= 0; j--)
+            {
+                if (currentLayer.dropOut[j] == 1) continue;
+
+                // TODO: Dot product
+                // Calculate Oneur * Wneur*J + ... + ( 1 * Bias)
+                output = 0;
+                for (neur = prevLength; neur >= 0; neur--)
+                {
+                    if (prevLayer.dropOut[neur] == 1) continue;
+                    output += prevLayer.outputValue[neur] * currentLayer.weights[neur][j];
+                }
+                currentLayer.outputValue[j] = currentLayer.ActivateFunc(output);
+            }
+
+            if (currentLayer.activateFunctionType == ActivateFunction.Softmax)
+            {
+                CalculateSoftmaxBufferDropout(currentLayer.outputValue, currentLayer.dropOut);
             }
         }
 
@@ -285,6 +325,29 @@ namespace TestClient
             }
 
         }
+
+        /// <summary>
+        /// Laskee softmaxin annetuille arvoille tapauksissa jossa käytetään dropouttia.
+        /// Ensiksi lasketaan syötearvojen e^(xi) summa ja sen jälkeen jokainen syöte jaetaan summalla. Tätä käytetään laskiessa
+        /// Feedforwardissa.
+        /// </summary>
+        /// <param name="values">Layerin output-arvot</param>
+        private static void CalculateSoftmaxBufferDropout(double[] values, int[] dropOut)
+        {
+            double sum = 0;
+            for (int i = 0; i < values.Length; i++)
+            {
+                if (dropOut[i] == 1) continue;
+                sum += Math.Exp(values[i]);
+            }
+            for (int i = 0; i < values.Length; i++)
+            {
+                if (dropOut[i] == 1) continue;
+                values[i] = Math.Exp(values[i]) / sum;
+            }
+
+        }
+
         /// <summary>
         /// Palauttaa softmaxin halutulle arvolle. Tämä lasketaan myöhemmin CalculateSoftmaxBufferissa, 
         /// koska tarvitaan tietoon _kaikkien_ output-arvot. Joten palautetaan vain saatu arvo, jotta  
@@ -605,6 +668,129 @@ namespace TestClient
                     {
                         // Lasketaan ei-bias arvot. errorValueTemp[x] on learninRate * errorValue[x]. Tämä on saatu laskettua jo biassien laskemisessa.
                         weightDiff = currentLayer.errorValueTemp[k] * previousLayer.outputValue[j] ;
+
+                        // Lasketaan uusi paino, josta on otettu weight decay, lisätään ero ja momentti
+                        currentLayer.weights[j][k] = l2reg * currentLayer.weights[j][k] + weightDiff + momentum * currentLayer.prevWeightDiffs[j][k];
+
+                        // Asetetaan delta-arvo talteen seuraavaa laskukertaa varten
+                        currentLayer.prevWeightDiffs[j][k] = weightDiff;
+                    }
+                }
+            }
+        }
+        /// <summary>
+        /// Opetetaan verkkoa. Käytännössä siis muutetaan verkon painotuksia odotettujen ja laskettujen arvojen perusteella.
+        /// Ennen tätä on yleensä feedforward suoritettu, jotta on jotain arvoja mitä opettaa. Tässä on mukana dropout, eli 
+        /// tiettyjä verkon nodeja tiputetaan opetuksesta pois, jos niin on määritelty.
+        /// </summary>
+        /// <param name="desiredResult">Verkon haluttu tulos</param>
+        /// <param name="learningRate">Oppimiskerroin</param>
+        /// <param name="momentum">Momenttikerroin</param>
+        /// <param name="lambda">Weight decay kerroin</param>
+        /// <param name="trainingSize">Opetusaineiston koko</param>
+
+        public virtual void BackpropagationDropout(double[] desiredResult, double learningRate, double momentum, double lambda, int trainingSize)
+        {
+            Layer outputLayer = layers[layers.Length - 1];
+            double outputValue;
+            int i;
+            int j;
+            int currentLayerCount;
+            int prevLayerCount;
+
+            // Lasketaan odotettujen arvojen ja todellisten arvojen välinen virhe: output layer
+
+            if (costFunctionType == CostFunction.Quadratic)
+            {
+                for (i = outputLayer.neuronCount - 1; i >= 0; i--)
+                {
+                    // MSE. Huomaa että derivaatta pitää olla oikea, riippuen funktiosta
+                    outputValue = outputLayer.outputValue[i];
+                    outputLayer.errorValue[i] = (desiredResult[i] - outputValue) * outputLayer.DerivateFunc(outputValue);
+                }
+            }
+            else
+            {
+                for (i = outputLayer.neuronCount - 1; i >= 0; i--)
+                {
+                    // MCEE
+                    outputLayer.errorValue[i] = (desiredResult[i] - outputLayer.outputValue[i]);
+                }
+            }
+
+            Layer hiddenLayer;
+
+            // Lasketaan odotettujen arvojen ja todellisten arvojen välinen virhe: hidden layers
+
+            int k;
+            for (i = layers.Length - 2; i > 0; i--)
+            {
+                hiddenLayer = layers[i];
+                outputLayer = layers[i + 1];
+                prevLayerCount = hiddenLayer.neuronCount;
+                currentLayerCount = outputLayer.neuronCount;
+
+                for (j = prevLayerCount - 1; j >= 0; j--)
+                {
+                    if (hiddenLayer.dropOut[j] == 1) continue;
+                    outputValue = 0;
+                    
+                    for (k = currentLayerCount - 1; k >= 0; k--)
+                    {
+                        if (outputLayer.dropOut[k] == 1) continue;
+                        outputValue += outputLayer.weights[j][k] * outputLayer.errorValue[k];
+                    }
+
+                    hiddenLayer.errorValue[j] = hiddenLayer.DerivateFunc(hiddenLayer.outputValue[j]) * outputValue;
+                }
+            }
+
+            Layer currentLayer;
+            Layer previousLayer;
+
+            int biasIndex;
+            double weightDiff;
+
+            double l2reg = 1 - (learningRate * (lambda / trainingSize));
+
+            // Nyt on virheet tiedossa. Päivitetään verkon painotukset lopusta alkuun.
+            for (i = layers.Length - 1; i > 0; i--)
+            {
+
+                currentLayer = layers[i];
+                previousLayer = layers[i - 1];
+
+                // calculate biases
+                biasIndex = currentLayer.weights.Length - 1;
+
+                currentLayerCount = currentLayer.neuronCount;
+                prevLayerCount = previousLayer.neuronCount;
+
+                // Bias  päivitys
+                for (k = currentLayerCount - 1; k >= 0; k--)
+                {
+                    if (currentLayer.dropOut[k] == 1) continue;
+                    // Saadaan delta-arvo  derivoitu virhearvosta kerrottuna oppimisarvolla [0..1]. Laitetaan tämä talteen ja lisäksi lisätään se painoarvoon
+                    weightDiff = currentLayer.errorValueTemp[k] = learningRate * currentLayer.errorValue[k];
+
+                    // Lisätään delta, nyt paino on w(t+1)
+                    currentLayer.weights[biasIndex][k] += weightDiff + momentum * currentLayer.prevWeightDiffs[biasIndex][k];
+
+                    // Asetetaan delta-arvo talteen seuraavaa laskukertaa varten
+                    currentLayer.prevWeightDiffs[biasIndex][k] = weightDiff;
+                }
+
+                // Normaalien painotuksein päivitys
+                for (j = 0; j < prevLayerCount; j++)
+                {
+                    if (previousLayer.dropOut[j] == 1) continue;
+
+                    for (k = 0; k < currentLayerCount; k++)
+                    {
+                        if (currentLayer.dropOut[k] == 1) continue;
+
+                        // Lasketaan ei-bias arvot. errorValueTemp[x] on learninRate * errorValue[x]. Tämä on saatu laskettua jo biassien laskemisessa.
+                        weightDiff = currentLayer.errorValueTemp[k] * previousLayer.outputValue[j];
 
                         // Lasketaan uusi paino, josta on otettu weight decay, lisätään ero ja momentti
                         currentLayer.weights[j][k] = l2reg * currentLayer.weights[j][k] + weightDiff + momentum * currentLayer.prevWeightDiffs[j][k];

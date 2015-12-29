@@ -57,7 +57,7 @@ namespace TestClient
         /// </summary>
         /// <param name="nc">Neuronien määrä</param>
         /// <param name="prevLayerNeuronCount">Edellisen layerin neuronien määrä</param>
-        public Layer(int nc, int prevLayerNeuronCount, int dropOutval)
+        public Layer(int nc, int prevLayerNeuronCount, double dropOutval)
         {
             neuronCount = nc;
             dropOutValue = dropOutval;

@@ -47,13 +47,8 @@ namespace TestClient
         public TestClient()
         {
 
-            // 3 layer network, 784 * 30 * 10
-            //network = new Network(new int[] { 28 * 28, 60, 10 }, new Network.ActivateFunction[] { Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Tanh }, Network.CostFunction.CrossEntropy, 0.1, 0.0, 0);        // 9778
-
-            network = new Network(new Layer[] { new Layer(28 * 28), new Layer(30, 28*28,0), new Layer(10, 30, 0) }, new Network.ActivateFunction[] { Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Tanh }, Network.CostFunction.CrossEntropy, 0.1, 0.0, 0);        // 9778
-            //network = new Network(new int[] { 28 * 28, 60, 10 }, new Network.ActivateFunction[]{ Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Tanh }, Network.CostFunction.CrossEntropy, 0.1, 0.0, 6);        // 9790
-            //network = new Network(new int[] { 28 * 28, 200, 10 }, new Network.ActivateFunction[] { Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Tanh }, Network.CostFunction.CrossEntropy, 0.1, 0.0, 6);        // 9832
-
+            network = new Network(new Layer[] { new Layer(28 * 28), new Layer(200, 28*28,0.5), new Layer(10, 200, 0) }, new Network.ActivateFunction[] { Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Tanh }, Network.CostFunction.CrossEntropy, 0.1, 0.0, 0);       
+       
             network.ResetGaussian();
             nrg = new Random();
         }
@@ -170,10 +165,15 @@ namespace TestClient
             }
 
             // Mahdolliset dropoutit
+            bool dropoutInUse = false;
 
             for(int i=0; i<network.layers.Length;i++)
             {
-                network.layers[i].CreateDropOut(false);
+                if (network.layers[i].dropOutValue > 0)
+                {
+                    dropoutInUse = true;
+                    network.layers[i].CreateDropOut(false);
+                }
             }
 
             // Opetetaan kuva kerrallaan. Ekana feedforward, sen jälkeen backpropagation.
@@ -193,9 +193,14 @@ namespace TestClient
                 idealValues[_desiredDatas[dataIndex[i]]] = 1.0f;
 
                 // learning rate, momentum, weight decay/l2 reg
-    
-                network.Backpropagation(idealValues, network.parLearningRate, network.parMomentum, network.parweightDecay, 60000);
-
+                if (dropoutInUse)
+                {
+                    network.BackpropagationDropout(idealValues, network.parLearningRate, network.parMomentum, network.parweightDecay, 60000);
+                }
+                else
+                {
+                    network.Backpropagation(idealValues, network.parLearningRate, network.parMomentum, network.parweightDecay, 60000);
+                } 
                 idealValues[_desiredDatas[dataIndex[i]]] = oldIdealValue;
                 if ( stopOperation)
                 {
