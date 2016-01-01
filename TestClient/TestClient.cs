@@ -24,7 +24,7 @@ namespace TestClient
     public class TestClient : IMNISTTest
     {
 
-        private const string VERSION_STRING = "TestClient example v1.1";
+        private const string VERSION_STRING = "TestClient example v1.2";
 
         private Network network;
         private int materialIndex;
@@ -47,7 +47,7 @@ namespace TestClient
         public TestClient()
         {
 
-            network = new Network(new Layer[] { new Layer(28 * 28), new Layer(200, 28*28,0.5), new Layer(10, 200, 0) }, new Network.ActivateFunction[] { Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Tanh }, Network.CostFunction.CrossEntropy, 0.1, 0.0, 0);       
+            network = new Network(new Layer[] { new Layer(28 * 28, 0.3), new Layer(400, 28*28,0), new Layer(10, 400, 0) }, new Network.ActivateFunction[] { Network.ActivateFunction.InputLayer, Network.ActivateFunction.Sigmoid, Network.ActivateFunction.Tanh }, Network.CostFunction.CrossEntropy, 0.1, 0.0, 0);       
        
             network.ResetGaussian();
             nrg = new Random();
@@ -252,10 +252,17 @@ namespace TestClient
 
             // Mahdolliset dropoutit
 
+            bool dropoutInUse = false;
+
             for (int i = 0; i < network.layers.Length; i++)
             {
-                network.layers[i].CreateDropOut(false);
+                if (network.layers[i].dropOutValue > 0)
+                {
+                    dropoutInUse = true;
+                    network.layers[i].CreateDropOut(false);
+                }
             }
+
 
 
             for (int matIndex = 0; matIndex < materialSize; matIndex+=batchSize, materialIndex+=batchSize)
@@ -276,16 +283,26 @@ namespace TestClient
                     // Koska vain yksi arvo kerrallaan on yksi, niin otetaan vanha arvo talteen ja asetetaan myöhemmin takaisin
                     oldIdealValue = idealValues[_desiredDatas[dataIndex[matIndex + batchNro]]];
                     idealValues[_desiredDatas[dataIndex[matIndex+ batchNro]]] = 1.0f;
-                    
-                    network.CalculateMiniBatchError(idealValues);
 
+                    if (dropoutInUse)
+                    {
+                        network.CalculateMiniBatchErrorDropout(idealValues);
+                    } else
+                    {
+                        network.CalculateMiniBatchError(idealValues);
+                    }
                     idealValues[_desiredDatas[dataIndex[matIndex + batchNro]]] = oldIdealValue;
 
                 }
 
                 // learning rate, momentum
-                network.UpdateMinibatchValues(network.parLearningRate, network.parMomentum, network.parweightDecay, batchSize, 60000);
-                
+                if (dropoutInUse)
+                {
+                    network.UpdateMinibatchValuesDropout(network.parLearningRate, network.parMomentum, network.parweightDecay, batchSize, 60000);
+                } else
+                {
+                    network.UpdateMinibatchValues(network.parLearningRate, network.parMomentum, network.parweightDecay, batchSize, 60000);
+                }
               
                 if (stopOperation)
                 {
@@ -396,7 +413,7 @@ namespace TestClient
             {
                 if( i == 0)
                 {
-                    info.Append(String.Format("Input layer, {0} nodes, activation func: {1}", network.layers[i].neuronCount, network.layers[i + 1].activateFunctionType));
+                    info.Append(String.Format("Input layer, {0} nodes, activation func: {1}, dropout: {2}", network.layers[i].neuronCount, network.layers[i + 1].activateFunctionType, network.layers[i].dropOutValue));
                 }
                 else if ((i + 1) == network.layers.Length)
                 {
@@ -404,7 +421,7 @@ namespace TestClient
                 }
                 else
                 {
-                    info.Append(String.Format("Hidden layer {2}, {0} nodes, activation func: {1}", network.layers[i].neuronCount, network.layers[i + 1].activateFunctionType, i));
+                    info.Append(String.Format("Hidden layer {2}, {0} nodes, activation func: {1}, dropout: {3}", network.layers[i].neuronCount, network.layers[i + 1].activateFunctionType, i, network.layers[i].dropOutValue));
                 }
                 info.Append(System.Environment.NewLine);
             }

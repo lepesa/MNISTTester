@@ -485,6 +485,110 @@ namespace TestClient
         }
 
         /// <summary>
+        /// Laskee yhdelle minibatchin stepille virheen. Tämä virhe lisätään gradienttiin, jota käytetään myöhemmin loopin loputtua.
+        /// Ottaa dropout nodet huomioon.
+        /// </summary>
+        /// <param name="desiredResult">Halutut verkon tulokset</param>
+        public void CalculateMiniBatchErrorDropout(double[] desiredResult)
+        {
+            // Lasketaan odotettujen arvojen ja todellisten arvojen välinen virhe: output layer
+            Layer outputLayer = layers[layers.Length - 1];
+            double outputValue;
+            int i;
+            int j;
+            int currentLayerCount;
+            int prevLayerCount;
+
+            if (costFunctionType == CostFunction.Quadratic)
+            {
+                for (i = outputLayer.neuronCount - 1; i >= 0; i--)
+                {
+                    // MSE. Huomaa että derivaatta pitää olla oikea, riippuen funktiosta
+                    outputValue = outputLayer.outputValue[i];
+                    outputLayer.errorValue[i] = (desiredResult[i] - outputValue) * outputLayer.DerivateFunc(outputValue);
+                }
+            }
+            else
+            {
+                for (i = outputLayer.neuronCount - 1; i >= 0; i--)
+                {
+                    // MCEE
+                    outputLayer.errorValue[i] = (desiredResult[i] - outputLayer.outputValue[i]);
+                }
+            }
+
+            Layer hiddenLayer;
+
+            // Lasketaan odotettujen arvojen ja todellisten arvojen välinen virhe: hidden layers
+            int k;
+            for (i = layers.Length - 2; i > 0; i--)
+            {
+                hiddenLayer = layers[i];
+                outputLayer = layers[i + 1];
+                prevLayerCount = hiddenLayer.neuronCount;
+                currentLayerCount = outputLayer.neuronCount;
+
+                for (j = prevLayerCount - 1; j >= 0; j--)
+                {
+                    if (hiddenLayer.dropOut[j] == 1) continue;
+                    outputValue = 0;
+
+                    for (k = currentLayerCount - 1; k >= 0; k--)
+                    {
+                        if (outputLayer.dropOut[k] == 1) continue;
+                        outputValue += outputLayer.weights[j][k] * outputLayer.errorValue[k];
+                    }
+                    hiddenLayer.errorValue[j] = hiddenLayer.DerivateFunc(hiddenLayer.outputValue[j]) * outputValue;
+                }
+            }
+
+            Layer currentLayer;      // layers[i]
+            Layer previousLayer;     // layers[i-1]
+
+            int biasIndex;
+            double prevOutputValue;
+            // Nyt on virheet tiedossa. Päivitetään verkon gradientit lopusta alkuun.
+            for (i = layers.Length - 1; i > 0; i--)
+            {
+
+                currentLayer = layers[i];
+                previousLayer = layers[i - 1];
+
+                // calculate biases
+                biasIndex = currentLayer.weights.Length - 1;
+
+                currentLayerCount = currentLayer.neuronCount;
+                prevLayerCount = previousLayer.neuronCount;
+
+                // Bias  päivitys
+                for (k = currentLayerCount - 1; k >= 0; k--)
+                {
+                    if (currentLayer.dropOut[k] == 1) continue;
+                    // Paino kerrotaan 1.0:lla, koska bias
+                    currentLayer.errorValueTemp[k] = 1.0 * currentLayer.errorValue[k];
+
+                    currentLayer.gradients[biasIndex][k] += currentLayer.errorValueTemp[k];
+                }
+
+                // Normaalien painotuksien päivitys
+                for (j = 0; j < prevLayerCount; j++)
+                {
+                    if (previousLayer.dropOut[j] == 1) continue;
+
+                    prevOutputValue = previousLayer.outputValue[j];
+                    for (k = 0; k < currentLayerCount; k++)
+                    {
+                        if (currentLayer.dropOut[k] == 1) continue;
+                        // Lasketaan ei-bias arvot. errorValueTemp[x] on tässä 1.0 * errorValue[x]. Tämä on saatu laskettua jo biassien laskemisessa.
+
+                        // Lisätään delta, nyt paino on w(t+1)
+                        currentLayer.gradients[j][k] += currentLayer.errorValueTemp[k] * prevOutputValue;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Päivitetään minibatchin painotuksien arvot. Tämä vastaa Backpropagation -metodia Online -oppimisessa.
         /// </summary>
         /// <param name="learningRate">Oppimiskerroin</param>
@@ -562,6 +666,90 @@ namespace TestClient
                 }
             }
         }
+
+        /// <summary>
+        /// Päivitetään minibatchin painotuksien arvot. Tämä vastaa Backpropagation -metodia Online -oppimisessa. Tässä dropout mukana
+        /// </summary>
+        /// <param name="learningRate">Oppimiskerroin</param>
+        /// <param name="momentum">Momenttikerroin</param>
+        /// <param name="lambda">Weight decay kerroin</param>
+        /// <param name="batchSize">Minibatchin koko</param>
+        /// <param name="trainingSize">Opetusaineiston koko</param>
+        public void UpdateMinibatchValuesDropout(double learningRate, double momentum, double lambda, int batchSize, int trainingSize)
+        {
+            Layer currentLayer;
+            Layer previousLayer;
+            int i;
+            int j;
+            int k;
+            int currentLayerCount;
+            int prevLayerCount;
+
+
+            // Lasketaan weight decay arvo valmiiksi
+            double l2reg = 1 - (learningRate * (lambda / trainingSize));
+
+            // Opetuskerroin ja momentti pitää jakaa batchin koolla, koska kumulatiivinen summa
+            learningRate = learningRate / batchSize;
+            momentum = momentum / batchSize;
+
+            int biasIndex;
+            double weightDiff;
+            // Nyt on virheet tiedossa. Päivitetään verkon painotukset lopusta alkuun.
+            for (i = layers.Length - 1; i > 0; i--)
+            {
+                currentLayer = layers[i];
+                previousLayer = layers[i - 1];
+
+                biasIndex = currentLayer.weights.Length - 1;
+
+                currentLayerCount = currentLayer.neuronCount;
+                prevLayerCount = previousLayer.neuronCount;
+
+                // Bias  päivitys
+                for (k = currentLayerCount - 1; k >= 0; k--)
+                {
+                    if (currentLayer.dropOut[k] == 1) continue;
+                    // Saadaam delta-arvo  derivoitu virhearvosta kerrottuna oppimisarvolla [0..1]. Laitetaan tämä talteen ja lisäksi lisätään se painoarvoon                   
+                    weightDiff = learningRate * currentLayer.gradients[biasIndex][k];
+
+                    // Lisätään delta, nyt paino on w(t+1)
+                    currentLayer.weights[biasIndex][k] += weightDiff;
+
+                    // Lisätään painoarvoon momenttiarvo kerrottuna edellisen kerran delta-arvolla
+                    currentLayer.weights[biasIndex][k] += momentum * currentLayer.prevWeightDiffs[biasIndex][k];
+
+                    // Asetetaan delta-arvo talteen seuraavaa laskukertaa varten
+                    currentLayer.prevWeightDiffs[biasIndex][k] = weightDiff;
+
+                    // Nollataan summagradientti
+                    currentLayer.gradients[biasIndex][k] = 0;
+                }
+
+                // Normaalien painotuksien päivitys
+                for (j = 0; j < prevLayerCount; j++)
+                {
+                    if (previousLayer.dropOut[j] == 1) continue;
+                    for (k = 0; k < currentLayerCount; k++)
+                    {
+                        if (currentLayer.dropOut[k] == 1) continue;
+                        // Lasketaan ei-bias arvot
+                        weightDiff = learningRate * currentLayer.gradients[j][k];
+
+                        // Lasketaan uusi paino, josta on otettu weight decay, lisätään ero ja momentti
+                        currentLayer.weights[j][k] = l2reg * currentLayer.weights[j][k] + weightDiff + momentum * currentLayer.prevWeightDiffs[j][k];
+
+                        // Vanha delta talteen seuraavaa kierrosta varten
+                        currentLayer.prevWeightDiffs[j][k] = weightDiff;
+
+                        // Nollataan summagradientti
+                        currentLayer.gradients[j][k] = 0;
+                    }
+                }
+            }
+        }
+
+
 
         /// <summary>
         /// Opetetaan verkkoa. Käytännössä siis muutetaan verkon painotuksia odotettujen ja laskettujen arvojen perusteella.

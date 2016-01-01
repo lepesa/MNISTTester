@@ -46,9 +46,10 @@ namespace TestClient
         /// Alustaa input layerin. Inputlayerilla ei ole tarvetta matriisille.
         /// </summary>
         /// <param name="nc">Neuronien määrä</param>
-        public Layer(int nc)
+        public Layer(int nc, double dropOutval)
         {
             neuronCount = nc;
+            dropOutValue = dropOutval;
             InitOutputErrorValues(nc);
         }
 
