@@ -110,7 +110,7 @@ namespace TestClient
 
             for (int i = 0; i < _imageDatas.Length; i++)
             {
-                newI = nrg.Next(0, _imageDatas.Length - 1);
+                newI = nrg.Next(0, _imageDatas.Length);
                 if (i != newI)
                 {
                     tmpI = dataIndex[newI];
